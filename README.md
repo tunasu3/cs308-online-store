@@ -97,7 +97,7 @@ Sprint 2: Setup & Design (Current)
 --------
 [ ] Task 1: Finalize Tech Stack (Frontend, Backend, Database).
 
-[ ] Task 2: Initialize Git repository and project boilerplate.
+[ ] Task 2: Initialize Git repository.
 
 [ ] Task 3: Design Database ER Diagram (Users, Products, Categories, Orders).
 
@@ -150,9 +150,9 @@ Sprint 5: Returns, Reviews & Quality Assurance
 
 [ ] Task 23: Customer Rating system (Star ratings and text reviews).
 
-[ ] Task 24: Implementation of at least 25 Unit Test Cases (Mocha/Jest/Pytest).
+[ ] Task 24: Implementation of at least 25 Unit Test Cases.
 
-[ ] Task 25: Security audit (SQL Injection & XSS prevention).
+[ ] Task 25: Security audit.
 
 [ ] Task 26: Final Bug fixing and UI/UX polishing before Final Demo.
 
