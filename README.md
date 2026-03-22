@@ -10,73 +10,73 @@ The system is built with a focus on concurrency, defensive programming, and secu
 
 Key Features
 ---------------------------------------------------------------------------------------
-    Customer Experience
+Customer Experience
 
-*Browsing & Search: Search products by name/description and sort by price or popularity.
+    Browsing & Search: Search products by name/description and sort by price or popularity.
 
-*Shopping Cart: Add products to the cart as a guest; login required only for checkout.
+    Shopping Cart: Add products to the cart as a guest; login required only for checkout.
 
-*Wishlist: Save favorite items and get notified automatically when a Sales Manager applies a discount.
+    Wishlist: Save favorite items and get notified automatically when a Sales Manager applies a discount.
 
-*Reviews: Comment and rate products (1-5 stars/1-10 points).
+    Reviews: Comment and rate products (1-5 stars/1-10 points).
 
-*Order Tracking: Monitor status (Processing, In-transit, Delivered) and download PDF invoices.
+    Order Tracking: Monitor status (Processing, In-transit, Delivered) and download PDF invoices.
 
-*Returns & Refunds: Request a refund within 30 days. Automated calculation ensures the refunded amount matches the discounted price at the time of purchase.
+    Returns & Refunds: Request a refund within 30 days. Automated calculation ensures the refunded amount matches the discounted price at the time of purchase.
 
 
-    Sales Manager 
+Sales Manager 
 
-*Dynamic Pricing: Set prices and apply discount rates to selected products.
+    Dynamic Pricing: Set prices and apply discount rates to selected products.
 
-*Financial Analysis: Calculate revenue/profit/loss for specific date ranges with visual charts.
+    Financial Analysis: Calculate revenue/profit/loss for specific date ranges with visual charts.
 
-*Invoice Management: View, print, and export all system invoices as PDF.
+    Invoice Management: View, print, and export all system invoices as PDF.
 
 Product Manager 
 
-*Inventory Control: Add/remove products and categories, and manage live stock levels.
+    Inventory Control: Add/remove products and categories, and manage live stock levels.
 
-*Delivery Department: Oversee the delivery list (Delivery ID, Customer, Address, Status).
+    Delivery Department: Oversee the delivery list (Delivery ID, Customer, Address, Status).
 
-*Moderation: Approve or disapprove customer comments before they become public.
+    Moderation: Approve or disapprove customer comments before they become public.
 
 ----------------------------------------------------------------------------------------------------------------------------------
-    Tech Stack
+Tech Stack
 
--Frontend: [ ]
+    Frontend: [ ]
 
--Backend: [ ]
+    Backend: [ ]
 
--Database: [ ]
+    Database: [ ]
 
--State Management: [ ]
+    State Management: [ ]
 
--File Generation: [ ] for PDF invoices.
+    File Generation: [ ] for PDF invoices.
 
 ------------------------------------------------------------------------------------------------------------------------------------
-    Security & Defensive Programming
+Security & Defensive Programming
 
-*Data Encryption: All sensitive information (passwords, credit card info, invoices) is stored in an encrypted format.
+    Data Encryption: All sensitive information (passwords, credit card info, invoices) is stored in an encrypted format.
 
-*RBAC (Role-Based Access Control): Strict privilege separation between user roles.
+    RBAC (Role-Based Access Control): Strict privilege separation between user roles.
 
-*Concurrency Handling: Implemented to prevent race conditions during simultaneous stock updates.
+    Concurrency Handling: Implemented to prevent race conditions during simultaneous stock updates.
 
-*Input Validation: Sanitize all user inputs.
+    Input Validation: Sanitize all user inputs.
 
 -------------------------------------------------------------------------------------------------------------------------------------
-    Team Members
+Team Members
 
-[Member Name] - [Backend Developer]
+    [Member Name] - [Backend Developer]
 
-[Member Name] - [Frontend Developer]
+    [Member Name] - [Frontend Developer]
 
-[Member Name] - [Full Stack]
+    [Member Name] - [Full Stack]
 
-[Member Name] - [Project Managers]
+    [Member Name] - [Project Managers]
 
 -----------------------------
-    License
+License
 
--This project was developed for academic purposes at Sabanci University.
+    This project was developed for academic purposes at Sabanci University.
