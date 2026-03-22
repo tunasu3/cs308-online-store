@@ -77,6 +77,87 @@ Team Members
     [Member Name] - [Project Managers]
 
 -----------------------------
+Project Roadmap & Sprint Schedule
+----------------
+Sprint 1: Project Initiation & Team Alignment (COMPLETED)
+------
+[x] Task 1: Formation of the project team and role assignments.
+
+[x] Task 2: Initial brainstorming sessions for the E-commerce theme.
+
+[x] Task 3: Analysis of project requirements.
+
+[x] Task 4: Review of the grading rubric and technical constraints.
+
+[x] Task 5: Setting up the communication channels
+
+    "Sprint 1 was dedicated to organizational meetings, requirement gathering, and team coordination. No coding was performed during this period."
+
+Sprint 2: Setup & Design (Current)
+--------
+[ ] Task 1: Finalize Tech Stack (Frontend, Backend, Database).
+
+[ ] Task 2: Initialize Git repository and project boilerplate.
+
+[ ] Task 3: Design Database ER Diagram (Users, Products, Categories, Orders).
+
+[ ] Task 4: Create "User Personas" and define Role-Based Access (Customer, Sales Manager, Product Manager).
+
+[ ] Task 5: Setup CI/CD pipeline
+
+
+Sprint 3: Core Features (Preparation for Progress Demo)
+------------
+[ ] Task 6: Develop User Sign-up & Login with encrypted passwords.
+
+[ ] Task 7: Implement Product Listing page with categories.
+
+[ ] Task 8: Build Search bar (Search by name, description, and category).
+
+[ ] Task 9: Create Product Detail page (showing price, stock, and info).
+
+[ ] Task 10: Implement Sorting logic.
+
+[ ] Task 11: Develop Shopping Cart (Add/Remove/Update quantity).
+
+[ ] Task 12: Build Checkout page with Mock Payment integration.
+
+[ ] Task 13: Automated PDF Invoice generation after purchase.
+
+[ ] Task 14: Admin Dashboard for initial data entry.
+
+
+Sprint 4: Managerial Features & Advanced Logic
+------------
+[ ] Task 15: Product Manager: Interface for stock updates and adding new products.
+
+[ ] Task 16: Product Manager: Comment moderation (Approve/Reject customer reviews).
+
+[ ] Task 17: Sales Manager: Dynamic pricing tool (Update prices/Set discounts).
+
+[ ] Task 18: Sales Manager: Delivery tracking and Order Status updates.
+
+[ ] Task 19: Wishlist system & Notification for price drops.
+
+[ ] Task 20: Implement "Revenue vs. Loss" charts for Sales Managers.
+
+[ ] Task 21: Integrate E-mail simulation for order confirmation.
+
+
+Sprint 5: Returns, Reviews & Quality Assurance
+------------
+[ ] Task 22: Return System: 30-day refund logic with automatic stock restock.
+
+[ ] Task 23: Customer Rating system (Star ratings and text reviews).
+
+[ ] Task 24: Implementation of at least 25 Unit Test Cases (Mocha/Jest/Pytest).
+
+[ ] Task 25: Security audit (SQL Injection & XSS prevention).
+
+[ ] Task 26: Final Bug fixing and UI/UX polishing before Final Demo.
+
+------------------
 License
+--------
 
     This project was developed for academic purposes at Sabanci University.
