@@ -46,7 +46,7 @@ Tech Stack
 
     Frontend: [ ]
 
-    Backend: [ ]
+    Backend: [Node JS]
 
     Database: [ ]
 
@@ -68,13 +68,15 @@ Security & Defensive Programming
 -------------------------------------------------------------------------------------------------------------------------------------
 Team Members
 
-    [Member Name] - [Backend Developer]
+    [] - [Backend Developer]
 
-    [Member Name] - [Frontend Developer]
+    [] - [Frontend Developer]
 
-    [Member Name] - [Full Stack]
+    [Tuna Kubat, Kerem Adem] - [Full Stack]
 
-    [Member Name] - [Project Managers]
+    [Tuna Kubat] - [Project Managers]
+
+    [Muhammad Maaz] - [Database]
 
 -----------------------------
 Project Roadmap & Sprint Schedule
@@ -91,7 +93,7 @@ Sprint 1: Project Initiation & Team Alignment (COMPLETED)
 
 [x] Task 5: Setting up the communication channels
 
-    "Sprint 1 was dedicated to organizational meetings, requirement gathering, and team coordination. No coding was performed during this period."
+    "Sprint 1 focused on team formation, requirement analysis, and project planning. Development activities will begin in Sprint 2."
 
 Sprint 2: Setup & Design (Current)
 --------
@@ -157,6 +159,32 @@ Sprint 5: Returns, Reviews & Quality Assurance
 [ ] Task 26: Final Bug fixing and UI/UX polishing before Final Demo.
 
 ------------------
+How to Run
+------------------
+### Backend
+cd backend
+
+npm install
+
+npm start
+
+### Frontend
+cd frontend
+
+npm install
+
+npm start
+
+Project Structure
+-----------------
+
+/backend   -> API and business logic  
+
+/frontend  -> User interface  
+
+/docs      -> Documentation and sprint planning
+
+-----------------
 License
 --------
 
