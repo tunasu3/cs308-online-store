@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
 
 import asusImg from './assets/ASUS.png';
 import corsairImg from './assets/corsair.png';
@@ -19,8 +18,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('Default');
+  const [notification, setNotification] = useState('');
 
- 
   const products = [
     { id: 1, n: "ASUS ROG STRIX B650-A", p: 9400, cat: "MB", img: asusImg },
     { id: 2, n: "Corsair Vengeance RGB 32GB", p: 4899, cat: "RAM", img: corsairImg },
@@ -47,6 +46,10 @@ function App() {
     } else {
       setCart([...cart, { ...product, qty: 1 }]);
     }
+    
+    
+    setNotification(`${product.n} added to loadout! 🚀`);
+    setTimeout(() => setNotification(''), 2500);
   };
 
   if (!isLoggedIn) {
@@ -91,10 +94,13 @@ function App() {
           )}
           <div style={{textAlign: 'right'}}>
             <div style={{fontSize: '11px', color: '#00d4ff', fontWeight:'bold'}}>{userRole.toUpperCase()}</div>
-            <div onClick={() => setIsLoggedIn(false)} style={styles.logoutLink}>Logout</div>
+            <div onClick={() => {setIsLoggedIn(false); setCart([]);}} style={styles.logoutLink}>Logout</div>
           </div>
         </div>
       </nav>
+
+      {/* TOAST NOTIFICATION */}
+      {notification && <div style={styles.notificationToast}>{notification}</div>}
 
       {/* SIDEBAR */}
       {isSideMenuOpen && (
@@ -111,7 +117,7 @@ function App() {
               </div>
             ))}
             <hr style={styles.hr}/>
-            <h4 style={{fontSize:'12px', color:'#00d4ff'}}>SORT BY</h4>
+            <h4 style={{fontSize:'12px', color:'#00d4ff', marginBottom:'10px'}}>SORT BY</h4>
             <select style={styles.darkSelect} onChange={(e) => {setSortBy(e.target.value); setIsSideMenuOpen(false);}}>
               <option value="Default">Default</option>
               <option value="LowToHigh">Price: Low to High</option>
@@ -127,14 +133,16 @@ function App() {
         <div style={styles.productGrid}>
           {filtered.map((item) => (
             <div key={item.id} style={styles.productCard}>
-              <div style={styles.imageBox}><img src={item.img} alt={item.n} style={styles.productImage} /></div>
+              <div style={styles.imageBox}>
+                <img src={item.img} alt={item.n} style={styles.productImage} />
+              </div>
               <div style={styles.cardInfo}>
                 <h4 style={styles.productName}>{item.n}</h4>
                 <p style={styles.productPrice}>{item.p.toLocaleString()} TL</p>
                 {userRole === 'Customer' ? (
                   <button onClick={() => addToCart(item)} style={styles.addToCartBtn}>Add to Cart</button>
                 ) : (
-                  <button style={{...styles.addToCartBtn, background: '#f39c12'}}>Edit Details</button>
+                  <button style={{...styles.addToCartBtn, background: '#f39c12', color:'#000', fontWeight:'bold'}}>Edit Details</button>
                 )}
               </div>
             </div>
@@ -148,16 +156,18 @@ function App() {
           <div style={styles.drawer} onClick={e => e.stopPropagation()}>
             <div style={styles.drawerHeader}><h3>Your Loadout</h3><button onClick={() => setIsCartOpen(false)} style={styles.closeBtn}>✕</button></div>
             <div style={styles.drawerContent}>
-              {cart.map(item => (
-                <div key={item.id} style={styles.cartItem}>
-                  <span>{item.n} (x{item.qty})</span>
-                  <b>{(item.p * item.qty).toLocaleString()} TL</b>
-                </div>
-              ))}
+              {cart.length === 0 ? <p style={{color:'#666'}}>Your cart is empty.</p> : 
+                cart.map(item => (
+                  <div key={item.id} style={styles.cartItem}>
+                    <span>{item.n} (x{item.qty})</span>
+                    <b>{(item.p * item.qty).toLocaleString()} TL</b>
+                  </div>
+                ))
+              }
             </div>
             <div style={styles.drawerFooter}>
               <h4>Total: {cart.reduce((a, b) => a + (b.p * b.qty), 0).toLocaleString()} TL</h4>
-              <button style={styles.proBtn}>Checkout</button>
+              <button style={{...styles.proBtn, width:'100%'}} disabled={cart.length === 0}>Checkout</button>
             </div>
           </div>
         </div>
@@ -174,7 +184,6 @@ const styles = {
   darkInput: { padding: '12px', borderRadius: '8px', border: '1px solid #333', background: '#0d0d0d', color: '#fff', outline: 'none' },
   proBtn: { padding: '14px', background: 'linear-gradient(45deg, #00d4ff, #0055ff)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' },
   toggleText: { color: '#00d4ff', marginTop: '15px', cursor: 'pointer', fontSize: '13px' },
-
   dashboardLayout: { minHeight: '100vh', background: '#0f0f0f', color: '#fff', fontFamily: 'sans-serif' },
   navBar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 40px', background: '#161616', borderBottom: '1px solid #333', position: 'sticky', top: 0, zIndex: 100 },
   navLeft: { display: 'flex', alignItems: 'center', gap: '20px' },
@@ -184,32 +193,30 @@ const styles = {
   navRight: { display: 'flex', gap: '25px', alignItems: 'center' },
   cartIcon: { position: 'relative', cursor: 'pointer', fontSize: '22px' },
   badge: { position: 'absolute', top: '-8px', right: '-10px', background: '#00d4ff', color: '#000', fontSize: '10px', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' },
-  logoutLink: { color: '#ff4d4d', cursor: 'pointer', fontSize: '11px' },
-
+  logoutLink: { color: '#ff4d4d', cursor: 'pointer', fontSize: '11px', marginTop:'2px' },
   overlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 1000 },
   sideMenu: { position: 'fixed', left: 0, top: 0, width: '280px', height: '100%', background: '#161616', padding: '30px', borderRight: '1px solid #333' },
   sideHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  sideItem: { padding: '10px 0', cursor: 'pointer', fontSize: '14px' },
+  sideItem: { padding: '12px 0', cursor: 'pointer', fontSize: '14px', borderBottom: '1px solid #222' },
   darkSelect: { width: '100%', padding: '10px', background: '#0a0a0a', color: '#fff', border: '1px solid #333', borderRadius: '5px' },
   hr: { border: '0', borderTop: '1px solid #333', margin: '20px 0' },
-
   container: { padding: '30px 40px' },
   sectionTitle: { borderLeft: '4px solid #00d4ff', paddingLeft: '15px', marginBottom: '25px' },
   productGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' },
-  productCard: { background: '#161616', borderRadius: '10px', overflow: 'hidden', border: '1px solid #333' },
-  imageBox: { height: '180px', background: '#fff', display:'flex', alignItems:'center', justifyContent:'center' },
-  productImage: { width: '90%', height: '90%', objectFit: 'contain' },
+  productCard: { background: '#161616', borderRadius: '10px', overflow: 'hidden', border: '1px solid #333', transition: '0.3s' },
+  imageBox: { height: '180px', background: '#fff', display:'flex', alignItems:'center', justifyContent:'center', padding:'10px' },
+  productImage: { maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' },
   cardInfo: { padding: '15px' },
   productName: { margin: '0 0 10px 0', fontSize: '14px', height: '35px', overflow:'hidden' },
   productPrice: { fontSize: '18px', fontWeight: 'bold', color: '#00d4ff', marginBottom: '10px' },
   addToCartBtn: { width: '100%', padding: '10px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' },
-
-  drawer: { position: 'fixed', right: 0, top: 0, width: '350px', height: '100%', background: '#161616', padding: '30px' },
+  drawer: { position: 'fixed', right: 0, top: 0, width: '350px', height: '100%', background: '#161616', padding: '30px', boxShadow: '-5px 0 15px rgba(0,0,0,0.5)' },
   drawerHeader: { display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '15px' },
   closeBtn: { background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' },
-  drawerContent: { padding: '20px 0' },
-  cartItem: { display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '13px' },
-  drawerFooter: { borderTop: '1px solid #333', paddingTop: '20px' }
+  drawerContent: { padding: '20px 0', maxHeight:'70vh', overflowY:'auto' },
+  cartItem: { display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '13px', borderBottom: '1px solid #222', paddingBottom: '10px' },
+  drawerFooter: { borderTop: '1px solid #333', paddingTop: '20px' },
+  notificationToast: { position: 'fixed', top: '80px', right: '20px', background: '#00d4ff', color: '#000', padding: '12px 25px', borderRadius: '8px', fontWeight: 'bold', zIndex: 2000, boxShadow: '0 4px 15px rgba(0,212,255,0.4)' }
 };
 
 export default App;
