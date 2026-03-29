@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-// --- SENİN DOSYA SİSTEMİNE GÖRE GÖRSELLERİ IMPORT EDİYORUZ ---
+
 import asusImg from './assets/ASUS.png';
 import corsairImg from './assets/corsair.png';
 import headsetImg from './assets/headset.png';
@@ -20,7 +20,7 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('Default');
 
-  // Senin indirdiğin görsellerle eşleşen ürün listesi
+ 
   const products = [
     { id: 1, n: "ASUS ROG STRIX B650-A", p: 9400, cat: "MB", img: asusImg },
     { id: 2, n: "Corsair Vengeance RGB 32GB", p: 4899, cat: "RAM", img: corsairImg },
