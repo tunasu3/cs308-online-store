@@ -58,10 +58,10 @@ app.put('/api/admin/update-product/:id', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-    res.send('CS308 Online Store Backend ✅');
+    res.send('CS308 Online Store Backend ');
 });
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT} 🚀`);
+    console.log(`Server running on port ${PORT} `);
 });
