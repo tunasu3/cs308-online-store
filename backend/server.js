@@ -1,58 +1,67 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
+require('dotenv').config();
+const connectDB = require('./config/db');
+
 const app = express();
-app.use(cors());
+
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    credentials: true
+}));
+
 app.use(express.json());
 
-const MONGO_URI = "YOUR_MONGODB_URI_HERE";
-mongoose.connect(MONGO_URI).then(() => console.log('DB Connected'));
+// Connect to MongoDB
+connectDB();
 
+// Routes
+const authRoutes = require('./routes/auth');
+const productRoutes = require('./routes/products');
+const orderRoutes = require('./routes/orders');
+const commentRoutes = require('./routes/comments');
 
-const productSchema = new mongoose.Schema({
-    name: String, price: Number, stock: Number, 
-    warrantyStatus: { type: String, default: "2 Years Standard" }
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/comments', commentRoutes);
+
+// Keep their existing admin/order routes
+const Order = require('./models/Order');
+const Product = require('./models/Product');
+
+app.get('/api/admin/orders', async (req, res) => {
+    try {
+        const orders = await Order.find();
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-const userSchema = new mongoose.Schema({ 
-    username: { type: String, unique: true }, 
-    password: { type: String }, 
-    fullName: String, email: String, address: String, taxId: String, 
-    role: { type: String, default: 'Product Manager' } 
-});
-
-const orderSchema = new mongoose.Schema({
-    customerName: String, address: String, status: { type: String, default: "Processing" },
-    items: [{ name: String, qty: Number }], totalAmount: Number
-});
-
-const Product = mongoose.model('Product', productSchema);
-const User = mongoose.model('User', userSchema);
-const Order = mongoose.model('Order', orderSchema);
-
-
-app.post('/api/auth/register', async (req, res) => {
-    try { const user = new User(req.body); await user.save(); res.status(201).json({ message: "OK" }); }
-    catch (err) { res.status(400).json({ error: err.message }); }
-});
-
-app.post('/api/auth/login', async (req, res) => {
-    const user = await User.findOne({ username: req.body.username, password: req.body.password });
-    if (user) res.json({ user });
-    else res.status(401).json({ message: "Invalid credentials" });
-});
-
-
-app.get('/api/products', async (req, res) => res.json(await Product.find()));
-app.put('/api/admin/update-product/:id', async (req, res) => {
-    await Product.findByIdAndUpdate(req.params.id, req.body);
-    res.json({ message: "Updated" });
-});
-
-app.get('/api/admin/orders', async (req, res) => res.json(await Order.find()));
 app.put('/api/admin/update-order/:id', async (req, res) => {
-    await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
-    res.json({ message: "Updated" });
+    try {
+        await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
+        res.json({ message: "Updated" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.listen(5000, () => console.log('API Running on 5000'));
+app.put('/api/admin/update-product/:id', async (req, res) => {
+    try {
+        await Product.findByIdAndUpdate(req.params.id, req.body);
+        res.json({ message: "Updated" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/', (req, res) => {
+    res.send('CS308 Online Store Backend ✅');
+});
+
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT} 🚀`);
+});
