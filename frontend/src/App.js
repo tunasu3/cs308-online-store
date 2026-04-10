@@ -611,6 +611,13 @@ function App() {
           <div style={styles.grid}>
             {products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map(p => (
               <div key={p._id} style={styles.card}>
+                {p.imageUrl && (
+                  <img
+                    src={p.imageUrl}
+                    alt={p.name}
+                    style={{ width:'100%', height:'180px', objectFit:'cover', borderRadius:'10px', marginBottom:'10px' }}
+                  />
+                )}
                 <h4>{p.name}</h4>
                 <p style={{color:'#007AFF', fontWeight:'bold'}}>{p.price?.toLocaleString()} TL</p>
                 <p style={{fontSize:'12px', color: p.stock > 0 ? 'green' : 'red'}}>
@@ -697,6 +704,7 @@ function App() {
                   <th>Price</th>
                   <th>Stock</th>
                   <th>Warranty</th>
+                  <th>Image URL</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -726,6 +734,24 @@ function App() {
                         defaultValue={p.warranty || ''}
                         style={styles.tableInputWide}
                         onChange={(e) => handleProductFieldChange(p._id, 'warranty', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        defaultValue={p.imageUrl || ''}
+                        style={{...styles.tableInputWide, width:'180px'}}
+                        placeholder="Paste image URL..."
+                        onChange={(e) => handleProductFieldChange(p._id, 'imageUrl', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        defaultValue={p.imageUrl || ''}
+                        style={{...styles.tableInputWide, width:'180px'}}
+                        placeholder="Paste image URL..."
+                        onChange={(e) => handleProductFieldChange(p._id, 'imageUrl', e.target.value)}
                       />
                     </td>
                     <td>
