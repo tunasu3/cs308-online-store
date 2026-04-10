@@ -33,7 +33,34 @@ function App() {
   const [authError, setAuthError] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  // Product manager dashboard states
+  const [editedProducts, setEditedProducts] = useState({});
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    price: '',
+    stock: '',
+    warranty: '',
+    description: ''
+  });
+  const [dashboardMsg, setDashboardMsg] = useState('');
+
+  // Category states
+  const [categories, setCategories] = useState([]);
+  const [editedCategories, setEditedCategories] = useState({});
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    description: ''
+  });
+
+  // Delivery states
+  const [deliveryMsg, setDeliveryMsg] = useState('');
+
+  useEffect(() => {
+    fetchData();
+    fetchCategories();
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -41,6 +68,16 @@ function App() {
       setProducts(await pRes.json());
     } catch (err) {
       console.error('Failed to fetch products:', err);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const cRes = await fetch('http://localhost:8000/api/categories');
+      if (!cRes.ok) throw new Error('Failed to fetch categories');
+      setCategories(await cRes.json());
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
     }
   };
 
@@ -52,6 +89,16 @@ function App() {
       console.error('Failed to fetch orders:', err);
     }
   };
+
+  const updateStatus = async (id, status) => {
+  await fetch(`http://localhost:8000/api/orders/${id}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+
+  fetchOrders(); // refresh table
+};
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -209,6 +256,247 @@ function App() {
     }
   };
 
+  // Product Manager Dashboard Functions
+  const handleProductFieldChange = (productId, field, value) => {
+    setEditedProducts(prev => ({
+      ...prev,
+      [productId]: {
+        ...(prev[productId] || {}),
+        [field]: value
+      }
+    }));
+  };
+
+  const saveProductChanges = async (product) => {
+    const updates = editedProducts[product._id];
+
+    if (!updates) {
+      setDashboardMsg('No changes to save for this product.');
+      setTimeout(() => setDashboardMsg(''), 2500);
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:8000/api/products/${product._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...product,
+          ...updates,
+          stock: Number((updates.stock ?? product.stock) || 0),
+          price: Number((updates.price ?? product.price) || 0)
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to update product');
+
+      setDashboardMsg(`Saved changes for ${product.name}`);
+      setEditedProducts(prev => {
+        const copy = { ...prev };
+        delete copy[product._id];
+        return copy;
+      });
+      fetchData();
+      setTimeout(() => setDashboardMsg(''), 2500);
+    } catch (err) {
+      setDashboardMsg(`Error: ${err.message}`);
+      setTimeout(() => setDashboardMsg(''), 3000);
+    }
+  };
+
+  const deleteProduct = async (productId) => {
+    const confirmed = window.confirm('Are you sure you want to delete this product?');
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`http://localhost:8000/api/products/${productId}`, {
+        method: 'DELETE'
+      });
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {}
+
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to delete product');
+
+      setDashboardMsg('Product deleted successfully.');
+      fetchData();
+      setTimeout(() => setDashboardMsg(''), 2500);
+    } catch (err) {
+      setDashboardMsg(`Error: ${err.message}`);
+      setTimeout(() => setDashboardMsg(''), 3000);
+    }
+  };
+
+  const addProduct = async () => {
+    if (!newProduct.name || !newProduct.price || !newProduct.stock) {
+      setDashboardMsg('Please fill in name, price, and stock.');
+      setTimeout(() => setDashboardMsg(''), 2500);
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:8000/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newProduct.name,
+          price: Number(newProduct.price),
+          stock: Number(newProduct.stock),
+          warranty: newProduct.warranty,
+          description: newProduct.description
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to add product');
+
+      setDashboardMsg('Product added successfully.');
+      setNewProduct({
+        name: '',
+        price: '',
+        stock: '',
+        warranty: '',
+        description: ''
+      });
+      setShowAddProduct(false);
+      fetchData();
+      setTimeout(() => setDashboardMsg(''), 2500);
+    } catch (err) {
+      setDashboardMsg(`Error: ${err.message}`);
+      setTimeout(() => setDashboardMsg(''), 3000);
+    }
+  };
+
+  const handleCategoryFieldChange = (categoryId, field, value) => {
+    setEditedCategories(prev => ({
+      ...prev,
+      [categoryId]: {
+        ...(prev[categoryId] || {}),
+        [field]: value
+      }
+    }));
+  };
+
+  const saveCategoryChanges = async (category) => {
+    const updates = editedCategories[category._id];
+
+    if (!updates) {
+      setDashboardMsg('No changes to save for this category.');
+      setTimeout(() => setDashboardMsg(''), 2500);
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:8000/api/categories/${category._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...category,
+          ...updates
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to update category');
+
+      setDashboardMsg(`Saved changes for category: ${category.name}`);
+      setEditedCategories(prev => {
+        const copy = { ...prev };
+        delete copy[category._id];
+        return copy;
+      });
+      fetchCategories();
+      setTimeout(() => setDashboardMsg(''), 2500);
+    } catch (err) {
+      setDashboardMsg(`Error: ${err.message}`);
+      setTimeout(() => setDashboardMsg(''), 3000);
+    }
+  };
+
+  const deleteCategory = async (categoryId) => {
+    const confirmed = window.confirm('Are you sure you want to delete this category?');
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`http://localhost:8000/api/categories/${categoryId}`, {
+        method: 'DELETE'
+      });
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {}
+
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to delete category');
+
+      setDashboardMsg('Category deleted successfully.');
+      fetchCategories();
+      setTimeout(() => setDashboardMsg(''), 2500);
+    } catch (err) {
+      setDashboardMsg(`Error: ${err.message}`);
+      setTimeout(() => setDashboardMsg(''), 3000);
+    }
+  };
+
+  const addCategory = async () => {
+    if (!newCategory.name.trim()) {
+      setDashboardMsg('Please enter a category name.');
+      setTimeout(() => setDashboardMsg(''), 2500);
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:8000/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCategory.name,
+          description: newCategory.description
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to add category');
+
+      setDashboardMsg('Category added successfully.');
+      setNewCategory({
+        name: '',
+        description: ''
+      });
+      setShowAddCategory(false);
+      fetchCategories();
+      setTimeout(() => setDashboardMsg(''), 2500);
+    } catch (err) {
+      setDashboardMsg(`Error: ${err.message}`);
+      setTimeout(() => setDashboardMsg(''), 3000);
+    }
+  };
+
+  const forwardOrderToDelivery = async (orderId) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'Forwarded to Delivery'
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to forward order');
+
+      setDeliveryMsg('Order forwarded to delivery department.');
+      fetchOrders();
+      setTimeout(() => setDeliveryMsg(''), 2500);
+    } catch (err) {
+      setDeliveryMsg(`Error: ${err.message}`);
+      setTimeout(() => setDeliveryMsg(''), 3000);
+    }
+  };
+
   return (
     <div style={styles.app}>
       {/* SIDEBAR */}
@@ -336,15 +624,146 @@ function App() {
         {/* PM: STOCK CONTROL */}
         {view === 'stock' && (
           <div style={styles.panel}>
-            <h2>Stock & Warranty</h2>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
+              <h2 style={{margin:0}}>Stock, Products & Categories</h2>
+              <div style={{display:'flex', gap:'10px'}}>
+                <button
+                  style={{...styles.primaryBtn, width:'auto', padding:'10px 16px', marginTop:0}}
+                  onClick={() => setShowAddProduct(true)}
+                >
+                  + Add Product
+                </button>
+                <button
+                  style={{...styles.primaryBtn, width:'auto', padding:'10px 16px', marginTop:0, background:'#34c759'}}
+                  onClick={() => setShowAddCategory(true)}
+                >
+                  + Add Category
+                </button>
+              </div>
+            </div>
+
+            {dashboardMsg && (
+              <p style={{marginBottom:'15px', color: dashboardMsg.startsWith('Error') ? 'red' : 'green'}}>
+                {dashboardMsg}
+              </p>
+            )}
+
+            <h3>Products</h3>
             <table style={styles.table}>
-              <thead><tr><th>Product</th><th>Stock</th><th>Warranty</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                  <th>Warranty</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
               <tbody>
                 {products.map(p => (
                   <tr key={p._id}>
                     <td>{p.name}</td>
-                    <td><input type="number" defaultValue={p.stock} style={styles.tableInput} /></td>
-                    <td><input type="text" defaultValue={p.warranty} style={styles.tableInputWide} /></td>
+                    <td>
+                      <input
+                        type="number"
+                        defaultValue={p.price}
+                        style={styles.tableInputWide}
+                        onChange={(e) => handleProductFieldChange(p._id, 'price', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        defaultValue={p.stock}
+                        style={styles.tableInput}
+                        onChange={(e) => handleProductFieldChange(p._id, 'stock', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        defaultValue={p.warranty || ''}
+                        style={styles.tableInputWide}
+                        onChange={(e) => handleProductFieldChange(p._id, 'warranty', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <div style={{display:'flex', gap:'8px'}}>
+                        <button
+                          style={{...styles.primaryBtn, width:'auto', padding:'8px 12px', marginTop:0}}
+                          onClick={() => saveProductChanges(p)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          style={{
+                            ...styles.primaryBtn,
+                            width:'auto',
+                            padding:'8px 12px',
+                            marginTop:0,
+                            background:'#ff3b30'
+                          }}
+                          onClick={() => deleteProduct(p._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <h3 style={{marginTop:'30px'}}>Categories</h3>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map(category => (
+                  <tr key={category._id}>
+                    <td>
+                      <input
+                        type="text"
+                        defaultValue={category.name}
+                        style={styles.tableInputWide}
+                        onChange={(e) => handleCategoryFieldChange(category._id, 'name', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        defaultValue={category.description || ''}
+                        style={styles.tableInputWide}
+                        onChange={(e) => handleCategoryFieldChange(category._id, 'description', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <div style={{display:'flex', gap:'8px'}}>
+                        <button
+                          style={{...styles.primaryBtn, width:'auto', padding:'8px 12px', marginTop:0}}
+                          onClick={() => saveCategoryChanges(category)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          style={{
+                            ...styles.primaryBtn,
+                            width:'auto',
+                            padding:'8px 12px',
+                            marginTop:0,
+                            background:'#ff3b30'
+                          }}
+                          onClick={() => deleteCategory(category._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -352,31 +771,58 @@ function App() {
           </div>
         )}
 
-        {/* PM: DELIVERY LIST */}
+        {/* DELIVERY TRACKING */}
         {view === 'delivery' && (
           <div style={styles.panel}>
-            <h2>Delivery List</h2>
+            <h2>Delivery Tracking</h2>
+
+            {deliveryMsg && (
+              <p style={{marginBottom:'15px', color: deliveryMsg.startsWith('Error') ? 'red' : 'green'}}>
+                {deliveryMsg}
+              </p>
+            )}
+
             <table style={styles.table}>
-              <thead><tr><th>Customer</th><th>Address</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Address</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
               <tbody>
                 {orders.map(o => (
                   <tr key={o._id}>
+                    <td style={{fontSize:'11px'}}>{o._id}</td>
                     <td>{o.userName}</td>
-                    <td>{o.deliveryAddress}</td>
-                    <td>{o.items?.map(i => `${i.name} (x${i.quantity})`).join(', ')}</td>
                     <td>{o.totalPrice?.toLocaleString()} TL</td>
                     <td>
-                      <select defaultValue={o.status} onChange={async (e) => {
-                        await fetch(`http://localhost:8000/api/orders/${o._id}/status`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ status: e.target.value })
-                        });
-                      }}>
-                        <option>Processing</option>
-                        <option>In-Transit</option>
-                        <option>Delivered</option>
-                      </select>
+  <select
+    value={o.status}
+    onChange={(e) => updateStatus(o._id, e.target.value)}
+  >
+    <option value="Pending">Pending</option>
+    <option value="Processing">Processing</option>
+    <option value="Shipped">Shipped</option>
+    <option value="Delivered">Delivered</option>
+    <option value="Cancelled">Cancelled</option>
+  </select>
+</td>
+                    <td>{o.deliveryAddress}</td>
+                    <td>
+                      {o.status === 'Confirmed' ? (
+                        <button
+                          style={{...styles.primaryBtn, width:'auto', padding:'8px 12px', marginTop:0}}
+                          onClick={() => forwardOrderToDelivery(o._id)}
+                        >
+                          Forward to Delivery
+                        </button>
+                      ) : (
+                        <span style={{fontSize:'12px', color:'#888'}}>No action</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -412,6 +858,93 @@ function App() {
           </div>
         )}
       </main>
+
+      {/* ADD PRODUCT MODAL */}
+      {showAddProduct && (
+        <div style={styles.modalOverlay} onClick={() => setShowAddProduct(false)}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <h3>Add New Product</h3>
+
+            <input
+              placeholder="Product name"
+              style={styles.input}
+              value={newProduct.name}
+              onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+            />
+
+            <input
+              placeholder="Price"
+              type="number"
+              style={styles.input}
+              value={newProduct.price}
+              onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+            />
+
+            <input
+              placeholder="Stock"
+              type="number"
+              style={styles.input}
+              value={newProduct.stock}
+              onChange={(e) => setNewProduct({...newProduct, stock: e.target.value})}
+            />
+
+            <input
+              placeholder="Warranty"
+              style={styles.input}
+              value={newProduct.warranty}
+              onChange={(e) => setNewProduct({...newProduct, warranty: e.target.value})}
+            />
+
+            <textarea
+              placeholder="Description"
+              rows={4}
+              style={{...styles.input, resize:'none'}}
+              value={newProduct.description}
+              onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+            />
+
+            <button onClick={addProduct} style={styles.primaryBtn}>Add Product</button>
+            <button
+              onClick={() => setShowAddProduct(false)}
+              style={{...styles.primaryBtn, background:'#ccc', color:'#333', marginTop:'10px'}}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ADD CATEGORY MODAL */}
+      {showAddCategory && (
+        <div style={styles.modalOverlay} onClick={() => setShowAddCategory(false)}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <h3>Add New Category</h3>
+
+            <input
+              placeholder="Category name"
+              style={styles.input}
+              value={newCategory.name}
+              onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
+            />
+
+            <textarea
+              placeholder="Description"
+              rows={4}
+              style={{...styles.input, resize:'none'}}
+              value={newCategory.description}
+              onChange={(e) => setNewCategory({...newCategory, description: e.target.value})}
+            />
+
+            <button onClick={addCategory} style={styles.primaryBtn}>Add Category</button>
+            <button
+              onClick={() => setShowAddCategory(false)}
+              style={{...styles.primaryBtn, background:'#ccc', color:'#333', marginTop:'10px'}}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* CHECKOUT MODAL */}
       {showCheckout && (
@@ -573,8 +1106,8 @@ const styles = {
   panel: { background:'#FFF', padding:'30px', borderRadius:'20px' },
   cartItem: { display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid #EEE' },
   table: { width:'100%', borderCollapse:'collapse', marginTop:'15px' },
-  tableInput: { width:'60px' },
-  tableInputWide: { width:'150px' },
+  tableInput: { width:'60px', padding:'6px', border:'1px solid #DDD', borderRadius:'6px' },
+  tableInputWide: { width:'120px', padding:'6px', border:'1px solid #DDD', borderRadius:'6px' },
   modalOverlay: { position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.5)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center' },
   modal: { background:'#FFF', padding:'30px', borderRadius:'20px', width:'480px', maxWidth:'90%', maxHeight:'90vh', overflowY:'auto' }
 };
