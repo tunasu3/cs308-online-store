@@ -527,7 +527,7 @@ function App() {
         )}
         {!user ? 
           <div style={styles.menuItem} onClick={() => {setView('login'); setIsMenuOpen(false)}}>Sign In</div> : 
-          <div style={{...styles.menuItem, color:'red'}} onClick={() => { setUser(null); localStorage.removeItem('token'); }}>Logout</div>
+          <div style={{...styles.menuItem, color:'red'}} onClick={() => { setUser(null); setView('store'); localStorage.removeItem('token'); }}>Logout</div>
         }
       </div>
 
