@@ -44,15 +44,15 @@ Product Manager
 ----------------------------------------------------------------------------------------------------------------------------------
 Tech Stack
 
-    Frontend: [ ]
+    Frontend: [React JS]
 
     Backend: [Node JS]
 
-    Database: [ ]
+    Database: [MongoDB Atlas]
 
-    State Management: [ ]
+    State Management: [React Context API]
 
-    File Generation: [ ] for PDF invoices.
+    File Generation: [jspdf] for PDF invoices.
 
 ------------------------------------------------------------------------------------------------------------------------------------
 Security & Defensive Programming
@@ -68,15 +68,11 @@ Security & Defensive Programming
 -------------------------------------------------------------------------------------------------------------------------------------
 Team Members
 
-    [] - [Backend Developer]
+    [Tuna Kubat, Kerem Adem, Janset Tunca, Muhammad Maaz] - [Full Stack]
 
-    [] - [Frontend Developer]
+    [Tuna Kubat] - [Project Manager]
 
-    [Tuna Kubat, Kerem Adem] - [Full Stack]
-
-    [Tuna Kubat] - [Project Managers]
-
-    [Muhammad Maaz] - [Database]
+    [Janset Tunca] - [Database]
 
 -----------------------------
 Project Roadmap & Sprint Schedule
@@ -97,30 +93,30 @@ Sprint 1: Project Initiation & Team Alignment (COMPLETED)
 
 Sprint 2: Setup & Design (Current)
 --------
-[ ] Task 1: Finalize Tech Stack (Frontend, Backend, Database).
+[x] Task 1: Finalize Tech Stack (Frontend, Backend, Database).
 
-[ ] Task 2: Initialize Git repository.
+[x] Task 2: Initialize Git repository.
 
-[ ] Task 3: Design Database ER Diagram (Users, Products, Categories, Orders).
+[x] Task 3: Design Database ER Diagram (Users, Products, Categories, Orders).
 
-[ ] Task 4: Create "User Personas" and define Role-Based Access (Customer, Sales Manager, Product Manager).
+[x] Task 4: Create "User Personas" and define Role-Based Access (Customer, Sales Manager, Product Manager).
 
-[ ] Task 5: Setup CI/CD pipeline
+[x] Task 5: Setup CI/CD pipeline
 
 
 Sprint 3: Core Features (Preparation for Progress Demo)
 ------------
-[ ] Task 6: Develop User Sign-up & Login with encrypted passwords.
+[x] Task 6: Develop User Sign-up & Login with encrypted passwords.
 
-[ ] Task 7: Implement Product Listing page with categories.
+[x] Task 7: Implement Product Listing page with categories.
 
-[ ] Task 8: Build Search bar (Search by name, description, and category).
+[x] Task 8: Build Search bar (Search by name, description, and category).
 
-[ ] Task 9: Create Product Detail page (showing price, stock, and info).
+[x] Task 9: Create Product Detail page (showing price, stock, and info).
 
-[ ] Task 10: Implement Sorting logic.
+[x] Task 10: Implement Sorting logic.
 
-[ ] Task 11: Develop Shopping Cart (Add/Remove/Update quantity).
+[x] Task 11: Develop Shopping Cart (Add/Remove/Update quantity).
 
 [ ] Task 12: Build Checkout page with Mock Payment integration.
 
@@ -131,9 +127,9 @@ Sprint 3: Core Features (Preparation for Progress Demo)
 
 Sprint 4: Managerial Features & Advanced Logic
 ------------
-[ ] Task 15: Product Manager: Interface for stock updates and adding new products.
+[x] Task 15: Product Manager: Interface for stock updates and adding new products.
 
-[ ] Task 16: Product Manager: Comment moderation (Approve/Reject customer reviews).
+[x] Task 16: Product Manager: Comment moderation (Approve/Reject customer reviews).
 
 [ ] Task 17: Sales Manager: Dynamic pricing tool (Update prices/Set discounts).
 
