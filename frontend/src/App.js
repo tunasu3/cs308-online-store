@@ -113,7 +113,11 @@ function App() {
       if (res.ok) {
         setUser(data.user);
         localStorage.setItem('token', data.token);
-        setView('shop');
+        if (data.role === 'Customer') {
+          setView('shop');
+        } else {
+          setView('mDash');
+        }
       } else {
         setAuthError(data.message || 'Login failed');
       }
@@ -503,10 +507,15 @@ function App() {
       <div style={{...styles.sidebar, left: isMenuOpen ? '0' : '-280px'}}>
         <button onClick={() => setIsMenuOpen(false)} style={styles.closeBtn}>×</button>
         <div style={styles.sidebarHeader}><h3>{user ? user.name : "Guest"}</h3></div>
-        <div style={styles.menuItem} onClick={() => {setView('shop'); setIsMenuOpen(false)}}>Shop</div>
+        {(!user || user?.role === 'Customer') && (
+          <>
+            <div style={styles.menuItem} onClick={() => {setView('shop'); setIsMenuOpen(false)}}>Shop</div>
+            <div style={styles.menuItem} onClick={() => {setView('cart'); setIsMenuOpen(false)}}>My Cart ({cart.length})</div>
+          </>
+        )}
         {user?.role === 'ProductManager' && (
           <>
-            <div style={styles.menuItem} onClick={() => {setView('stock'); setIsMenuOpen(false)}}>Stock & Warranty</div>
+            <div style={styles.menuItem} onClick={() => {setView('products'); setIsMenuOpen(false)}}>Products</div>
             <div style={styles.menuItem} onClick={() => {fetchOrders(); setView('delivery'); setIsMenuOpen(false)}}>Delivery Tracking</div>
             <div style={styles.menuItem} onClick={() => {loadPendingComments(); setIsMenuOpen(false)}}>🛡️ Moderate Comments</div>
           </>
@@ -516,7 +525,6 @@ function App() {
             <div style={styles.menuItem} onClick={() => {fetchOrders(); setView('invoices'); setIsMenuOpen(false)}}>📋 All Invoices</div>
           </>
         )}
-        <div style={styles.menuItem} onClick={() => {setView('cart'); setIsMenuOpen(false)}}>My Cart ({cart.length})</div>
         {!user ? 
           <div style={styles.menuItem} onClick={() => {setView('login'); setIsMenuOpen(false)}}>Sign In</div> : 
           <div style={{...styles.menuItem, color:'red'}} onClick={() => { setUser(null); localStorage.removeItem('token'); }}>Logout</div>
@@ -621,8 +629,41 @@ function App() {
           </div>
         )}
 
-        {/* PM: STOCK CONTROL */}
-        {view === 'stock' && (
+        {/* MODERATOR DASHBOARD */}
+        {view === 'mDash' && (
+          <>
+            <h2>Dashboard</h2>
+            <div style={styles.grid}>
+              {user?.role === 'ProductManager' && (
+                <>
+                  <button style={styles.card}
+                    onClick={() => {setView('products')}}>
+                    <p style={{ fontSize:'20px' }}>Product Controls</p>
+                  </button>
+                  <button style={styles.card}
+                    onClick={() => {fetchOrders(); setView('delivery')}}>
+                    <p style={{ fontSize:'20px' }}>Delivery Status Controls</p>
+                  </button>
+                  <button style={styles.card}
+                    onClick={() => {loadPendingComments()}}>
+                    <p style={{ fontSize:'20px' }}>Comment Moderation</p>
+                  </button>
+                </>
+              )}
+              {user?.role === 'SalesManager' && (
+                <>
+                  <button style={styles.card}
+                    onClick={() => {fetchOrders(); setView('invoices')}}>
+                    <p style={{ fontSize:'20px' }}>📋 All Invoices</p>
+                  </button>
+                </>
+              ) /*ToDo: Add sales manager action buttons*/}
+            </div>
+          </>
+        )}
+
+        {/* PM: PRODUCT CONTROL */}
+        {view === 'products' && (
           <div style={styles.panel}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
               <h2 style={{margin:0}}>Stock, Products & Categories</h2>
@@ -800,17 +841,17 @@ function App() {
                     <td>{o.userName}</td>
                     <td>{o.totalPrice?.toLocaleString()} TL</td>
                     <td>
-  <select
-    value={o.status}
-    onChange={(e) => updateStatus(o._id, e.target.value)}
-  >
-    <option value="Pending">Pending</option>
-    <option value="Processing">Processing</option>
-    <option value="Shipped">Shipped</option>
-    <option value="Delivered">Delivered</option>
-    <option value="Cancelled">Cancelled</option>
-  </select>
-</td>
+                      <select
+                        value={o.status}
+                        onChange={(e) => updateStatus(o._id, e.target.value)}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+                    </td>
                     <td>{o.deliveryAddress}</td>
                     <td>
                       {o.status === 'Confirmed' ? (
@@ -1104,6 +1145,7 @@ const styles = {
   card: { background:'#FFF', padding:'20px', borderRadius:'15px', textAlign:'center' },
   addBtn: { width:'100%', padding:'10px', background:'#007AFF', color:'#FFF', border:'none', borderRadius:'8px', cursor:'pointer' },
   panel: { background:'#FFF', padding:'30px', borderRadius:'20px' },
+  toolbarBtn: { width:'max-content', position:'sticky', right:'20px' },
   cartItem: { display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid #EEE' },
   table: { width:'100%', borderCollapse:'collapse', marginTop:'15px' },
   tableInput: { width:'60px', padding:'6px', border:'1px solid #DDD', borderRadius:'6px' },
