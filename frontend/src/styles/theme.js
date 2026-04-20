@@ -1,16 +1,92 @@
 export const styles = {
-    app: { fontFamily: 'sans-serif', color: '#333' },
-    navbar: { display: 'flex', justifyContent: 'space-between', padding: '15px 30px', background: '#fff', borderBottom: '1px solid #eee', position: 'sticky', top: 0, zIndex: 100 },
-    navTools: { display: 'flex', alignItems: 'center', gap: '20px' },
-    search: { padding: '8px 15px', borderRadius: '20px', border: '1px solid #ddd', width: '250px' },
-    sidebar: { position: 'fixed', top: 0, bottom: 0, width: '280px', background: '#fff', boxShadow: '2px 0 10px rgba(0,0,0,0.1)', zIndex: 200, transition: '0.3s ease', padding: '20px' },
-    menuItem: { padding: '15px', cursor: 'pointer', borderBottom: '1px solid #f9f9f9', fontSize: '16px' },
-    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '25px', padding: '30px' },
-    card: { background: '#fff', padding: '20px', borderRadius: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', textAlign: 'center' },
-    primaryBtn: { background: '#007AFF', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', cursor: 'pointer', width: '100%', fontWeight: 'bold' },
-    addBtn: { width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#007AFF', color: '#fff', cursor: 'pointer' },
-    panel: { padding: '30px', maxWidth: '1000px', margin: '0 auto' },
-    table: { width: '100%', borderCollapse: 'collapse', marginTop: '20px' },
-    authCard: { maxWidth: '400px', margin: '100px auto', padding: '30px', borderRadius: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' },
-    input: { width: '100%', padding: '12px', marginBottom: '15px', borderRadius: '8px', border: '1px solid #ddd' }
+  app: {
+    fontFamily: "'Inter', sans-serif",
+    backgroundColor: "#f5f5f7",
+    minHeight: "100vh",
+    color: "#1d1d1f"
+  },
+  navbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "0 5%",
+    height: "70px",
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    backdropFilter: "blur(20px)",
+    borderBottom: "1px solid #d2d2d7",
+    position: "sticky",
+    top: 0,
+    zIndex: 1000
+  },
+  sidebar: {
+    position: "fixed",
+    top: 0,
+    height: "100vh",
+    width: "280px",
+    backgroundColor: "#ffffff",
+    boxShadow: "10px 0 30px rgba(0,0,0,0.1)",
+    zIndex: 2000,
+    transition: "left 0.3s ease",
+    padding: "30px 20px",
+    display: "flex",
+    flexDirection: "column"
+  },
+  overlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(0,0,0,0.4)",
+    zIndex: 1500,
+    backdropFilter: "blur(4px)"
+  },
+  menuItem: {
+    padding: "15px",
+    fontSize: "17px",
+    fontWeight: "500",
+    cursor: "pointer",
+    borderRadius: "12px",
+    transition: "all 0.2s",
+    marginBottom: "8px",
+    color: "#1d1d1f",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px"
+  },
+  navTools: {
+    display: "flex",
+    alignItems: "center",
+    gap: "20px"
+  },
+  search: {
+    padding: "10px 15px",
+    borderRadius: "10px",
+    border: "1px solid #d2d2d7",
+    backgroundColor: "#f5f5f7",
+    width: "200px"
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+    gap: "25px",
+    padding: "30px 5%"
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: "20px",
+    padding: "20px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    transition: "transform 0.2s"
+  },
+  primaryBtn: {
+    backgroundColor: "#0071e3",
+    color: "#fff",
+    border: "none",
+    padding: "12px",
+    borderRadius: "10px",
+    fontWeight: "600",
+    cursor: "pointer",
+    width: "100%"
+  }
 };
