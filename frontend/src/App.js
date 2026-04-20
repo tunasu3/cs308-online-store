@@ -9,6 +9,7 @@ import Cart from './pages/Cart';
 import AuthCard from './pages/AuthCard';
 import ProductManager from './pages/Dashboard/ProductManager';
 import DeliveryTracking from './pages/Dashboard/DeliveryTracking';
+import ProductDetail from './pages/ProductDetail';
 
 function App() {
   const [view, setView] = useState('shop');
@@ -19,6 +20,7 @@ function App() {
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categories, setCategories] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Auth States
   const [authData, setAuthData] = useState({ name: '', email: '', password: '', fullName: '' });
@@ -37,7 +39,7 @@ function App() {
     fetchCategories();
   }, []);
 
-  // --- API FONKSİYONLARI ---
+
   const fetchData = async () => {
     try {
       const pRes = await fetch('http://localhost:8000/api/products');
@@ -59,7 +61,7 @@ function App() {
     } catch (err) { console.error('Failed to fetch orders:', err); }
   };
 
-  // --- İŞLEM FONKSİYONLARI ---
+ 
   const updateStatus = async (id, status) => {
     await fetch(`http://localhost:8000/api/orders/${id}/status`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status })
@@ -104,7 +106,7 @@ function App() {
     else setCart([...cart, {...p, qty: 1}]);
   };
 
-  // PM Functions
+ 
   const handleProductFieldChange = (productId, field, value) => {
     setEditedProducts(prev => ({ ...prev, [productId]: { ...(prev[productId] || {}), [field]: value } }));
   };
@@ -143,7 +145,9 @@ function App() {
 
       <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px' }}>
         
-        {view === 'shop' && <Shop products={products} searchTerm={searchTerm} addToCart={addToCart} openComments={openComments} />}
+        {view === 'shop' && <Shop products={products} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} />}
+        
+        {view === 'productDetail' && selectedProduct && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} />}
         
         {(view === 'login' || view === 'register') && <AuthCard view={view} setView={setView} handleLogin={handleLogin} handleRegister={handleRegister} authData={authData} setAuthData={setAuthData} authError={authError} />}
         

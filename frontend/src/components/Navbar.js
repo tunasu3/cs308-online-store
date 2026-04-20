@@ -5,7 +5,7 @@ export default function Navbar({ setIsMenuOpen, setView, cart, user, setSearchTe
     <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
         <button onClick={() => setIsMenuOpen(true)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>☰</button>
-        <h1 style={{ margin: 0, fontSize: '20px', color: '#007AFF', cursor: 'pointer' }} onClick={() => setView('shop')}>ProStore</h1>
+        <h1 style={{ margin: 0, fontSize: '20px', color: '#007AFF', cursor: 'pointer' }} onClick={() => setView('shop')}>Store</h1>
       </div>
 
       <input 
