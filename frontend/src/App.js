@@ -1,165 +1,125 @@
 import React, { useState, useEffect } from 'react';
-import './styles.css';
-
-// Components & Pages
 import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
 import Shop from './pages/Shop';
-import Cart from './pages/Cart';
+import ProductDetail from './pages/ProductDetail';
 import AuthCard from './pages/AuthCard';
 import ProductManager from './pages/Dashboard/ProductManager';
-import DeliveryTracking from './pages/Dashboard/DeliveryTracking';
-import ProductDetail from './pages/ProductDetail';
+import Cart from './pages/Cart';
 
-function App() {
+export default function App() {
   const [view, setView] = useState('shop');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
   const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [cart, setCart] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [categories, setCategories] = useState([]);
+  const [cart, setCart] = useState([]);
+  const [user, setUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-
-  // Auth States
-  const [authData, setAuthData] = useState({ name: '', email: '', password: '', fullName: '' });
-  const [authError, setAuthError] = useState('');
-
-  // Dashboard / Management States
-  const [editedProducts, setEditedProducts] = useState({});
-  const [dashboardMsg, setDashboardMsg] = useState('');
-  const [showAddProduct, setShowAddProduct] = useState(false);
-  const [showAddCategory, setShowAddCategory] = useState(false);
-  const [deliveryMsg, setDeliveryMsg] = useState('');
-  const [showCheckout, setShowCheckout] = useState(false);
-
-  useEffect(() => {
-    fetchData();
-    fetchCategories();
-  }, []);
-
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [authData, setAuthData] = useState({ email: '', password: '', fullName: '', taxId: '', address: '' });
 
   const fetchData = async () => {
     try {
       const pRes = await fetch('http://localhost:8000/api/products');
-      setProducts(await pRes.json());
-    } catch (err) { console.error('Failed to fetch products:', err); }
-  };
-
-  const fetchCategories = async () => {
-    try {
       const cRes = await fetch('http://localhost:8000/api/categories');
+      setProducts(await pRes.json());
       setCategories(await cRes.json());
-    } catch (err) { console.error('Failed to fetch categories:', err); }
+    } catch (err) { 
+      console.error(err); 
+    }
   };
 
-  const fetchOrders = async () => {
-    try {
-      const oRes = await fetch('http://localhost:8000/api/orders');
-      setOrders(await oRes.json());
-    } catch (err) { console.error('Failed to fetch orders:', err); }
-  };
-
- 
-  const updateStatus = async (id, status) => {
-    await fetch(`http://localhost:8000/api/orders/${id}/status`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status })
-    });
-    fetchOrders(); 
-  };
+  useEffect(() => { 
+    fetchData(); 
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setAuthError('');
     try {
       const res = await fetch('http://localhost:8000/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: authData.email, password: authData.password })
       });
       const data = await res.json();
       if (res.ok) {
         setUser(data.user);
-        localStorage.setItem('token', data.token);
-        setView(data.role === 'Customer' ? 'shop' : 'mDash');
-      } else setAuthError(data.message || 'Login failed');
-    } catch (err) { setAuthError('Failed to connect to server'); }
+        setView('shop');
+      } else { 
+        alert(data.message); 
+      }
+    } catch (err) { 
+      console.error(err); 
+    }
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setAuthError('');
+  const deleteProduct = async (id) => {
+    if(!window.confirm("Are you sure?")) return;
     try {
-      const res = await fetch('http://localhost:8000/api/auth/register', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: authData.fullName, email: authData.email, password: authData.password })
-      });
-      if (res.ok) { alert('Account created!'); setView('login'); } 
-      else { const data = await res.json(); setAuthError(data.message || 'Registration failed'); }
-    } catch (err) { setAuthError('Failed to connect to server'); }
-  };
-
-  const addToCart = (p) => {
-    if (p.stock === 0) return;
-    const found = cart.find(item => item._id === p._id);
-    if (found) setCart(cart.map(i => i._id === p._id ? {...i, qty: i.qty + 1} : i));
-    else setCart([...cart, {...p, qty: 1}]);
-  };
-
- 
-  const handleProductFieldChange = (productId, field, value) => {
-    setEditedProducts(prev => ({ ...prev, [productId]: { ...(prev[productId] || {}), [field]: value } }));
-  };
-
-  const saveProductChanges = async (product) => {
-    const updates = editedProducts[product._id];
-    if (!updates) return;
-    try {
-      await fetch(`http://localhost:8000/api/products/${product._id}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...product, ...updates, stock: Number(updates.stock ?? product.stock), price: Number(updates.price ?? product.price) })
-      });
-      setDashboardMsg(`Saved changes for ${product.name}`);
+      await fetch(`http://localhost:8000/api/products/${id}`, { method: 'DELETE' });
       fetchData();
-      setTimeout(() => setDashboardMsg(''), 2500);
-    } catch (err) { setDashboardMsg(`Error: ${err.message}`); }
+    } catch (err) { 
+      console.error(err); 
+    }
   };
-
-  const deleteProduct = async (productId) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
-    try {
-      await fetch(`http://localhost:8000/api/products/${productId}`, { method: 'DELETE' });
-      fetchData();
-    } catch (err) { console.error(err); }
-  };
-
-  const openComments = () => { /* Review logic */ };
-  const loadPendingComments = () => { /* Review approval logic */ };
 
   return (
-    <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', paddingBottom: '50px' }}>
-      
-      <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} user={user} setUser={setUser} setView={setView} cart={cart} fetchOrders={fetchOrders} loadPendingComments={loadPendingComments} />
-      
-      <Navbar setIsMenuOpen={setIsMenuOpen} setView={setView} cart={cart} user={user} setSearchTerm={setSearchTerm} />
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', fontFamily: 'Inter, sans-serif' }}>
+      <Navbar 
+        setView={setView} 
+        cart={cart} 
+        user={user} 
+        setSearchTerm={setSearchTerm} 
+        setIsCartOpen={() => setView('cart')} 
+        setIsMenuOpen={setIsMenuOpen} 
+      />
 
-      <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px' }}>
+      {isMenuOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '280px', height: '100%', backgroundColor: '#fff', zIndex: 1000, padding: '30px', boxShadow: '5px 0 15px rgba(0,0,0,0.1)' }}>
+          <button onClick={() => setIsMenuOpen(false)} style={{ float: 'right', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
+          <h3 style={{ marginTop: '40px' }}>Menu</h3>
+          <ul style={{ listStyle: 'none', padding: 0, marginTop: '20px' }}>
+            <li onClick={() => { setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>Shop</li>
+            
+            {user?.role === 'ProductManager' && (
+              <li onClick={() => { setView('products'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}>
+                🛡️ ProductManager Dashboard
+              </li>
+            )}
+
+            {user && (
+              <li onClick={() => { setUser(null); setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#666' }}>Logout</li>
+            )}
+          </ul>
+        </div>
+      )}
+
+      <main style={{ padding: '20px 5%' }}>
+        {view === 'shop' && <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={(p) => setCart([...cart, {...p, qty: 1}])} setView={setView} setSelectedProduct={setSelectedProduct} />}
+        {view === 'cart' && <Cart cart={cart} setCart={setCart} user={user} setView={setView} />}
+        {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={(p) => setCart([...cart, {...p, qty: 1}])} setView={setView} />}
         
-        {view === 'shop' && <Shop products={products} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} />}
-        
-        {view === 'productDetail' && selectedProduct && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} />}
-        
-        {(view === 'login' || view === 'register') && <AuthCard view={view} setView={setView} handleLogin={handleLogin} handleRegister={handleRegister} authData={authData} setAuthData={setAuthData} authError={authError} />}
-        
-        {view === 'cart' && <Cart cart={cart} setCart={setCart} setShowCheckout={setShowCheckout} />}
-        
-        {view === 'products' && <ProductManager products={products} categories={categories} dashboardMsg={dashboardMsg} setShowAddProduct={setShowAddProduct} setShowAddCategory={setShowAddCategory} handleProductFieldChange={handleProductFieldChange} saveProductChanges={saveProductChanges} deleteProduct={deleteProduct} />}
-        
-        {view === 'delivery' && <DeliveryTracking orders={orders} updateStatus={updateStatus} deliveryMsg={deliveryMsg} />}
-        
+        {(view === 'login' || view === 'register') && (
+          <AuthCard 
+            view={view} 
+            setView={setView} 
+            handleLogin={handleLogin} 
+            authData={authData} 
+            setAuthData={setAuthData} 
+          />
+        )}
+
+        {view === 'products' && (
+          user?.role === 'ProductManager' ? (
+            <ProductManager products={products} categories={categories} fetchData={fetchData} deleteProduct={deleteProduct} />
+          ) : (
+            <div style={{ textAlign: 'center', marginTop: '50px' }}>
+              <h2>Access Denied</h2>
+              <p>You don't have permission to view this page.</p>
+              <button onClick={() => setView('shop')} style={{ padding: '10px 20px', marginTop: '15px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Go Back Home</button>
+            </div>
+          )
+        )}
       </main>
     </div>
   );
 }
-
-export default App;

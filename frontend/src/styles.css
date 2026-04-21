@@ -1,48 +1,69 @@
-/* styles.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* --- RAMPAGE TARZI TEMİZ VE MİNİMAL TEMA --- */
 :root {
-  --primary: #007AFF;
-  --bg-color: #f8f9fa;
-  --card-bg: #ffffff;
-  --text-main: #333333;
-  --text-muted: #888888;
+  --bg-color: #ffffff;      /* Bembeyaz sayfa arka planı */
+  --card-bg: #ffffff;       /* Bembeyaz kartlar */
+  --text-main: #212529;     /* Koyu antrasit metin (Tam siyah göz yorar) */
+  --text-muted: #6c757d;    /* Gri alt metinler */
+  --accent: #e60000;        /* Rampage tarzı agresif oyuncu kırmızısı */
+  --accent-hover: #cc0000;
+  --border: #eaedf0;        /* Çok ince, zarif gri çerçeve rengi */
+  --radius: 8px;            /* Hafif yumuşatılmış köşeler */
 }
 
-body {
-  font-family: 'Inter', -apple-system, sans-serif;
-  background-color: var(--bg-color);
+/* --- KÖK DÜZELTMELERİ --- */
+html, body, #root {
   margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--bg-color) !important;
   color: var(--text-main);
+  font-family: 'Inter', sans-serif;
 }
 
-/* Modern Card Design */
+/* --- MİNİMALİST ÜRÜN KARTLARI --- */
 .pro-card {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.pro-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 15px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Modern Button */
+.pro-card:hover {
+  border-color: #ccc; /* Üzerine gelince çerçeve biraz belirginleşsin */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Çok hafif, zarif bir gölge */
+}
+
+/* --- BUTONLAR (Siyah veya Kırmızı Tercih Edilebilir) --- */
 .pro-btn {
-  background-color: var(--primary);
-  color: white;
+  background-color: var(--text-main); /* Varsayılan siyah buton */
+  color: #ffffff !important;
   border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: 6px;
+  padding: 10px 15px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
-  width: 100%;
+  transition: background-color 0.2s ease;
+  margin-top: auto;
 }
-.pro-btn:hover {
-  background-color: #005bb5;
+
+.pro-btn:hover:not(:disabled) {
+  background-color: var(--accent); /* Üzerine gelince kırmızı olsun! */
 }
+
 .pro-btn:disabled {
-  background-color: #ccc;
+  background-color: var(--border);
+  color: var(--text-muted) !important;
   cursor: not-allowed;
+}
+
+h1, h2, h3 {
+  color: var(--text-main);
+  margin: 0;
 }
