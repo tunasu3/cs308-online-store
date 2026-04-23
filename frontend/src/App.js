@@ -16,7 +16,18 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [authData, setAuthData] = useState({ email: '', password: '', fullName: '', taxId: '', address: '' });
-
+  
+  const addToCart = (product) => {
+  setCart(prevCart => {
+    const existing = prevCart.find(item => item._id === product._id);
+    if (existing) {
+      return prevCart.map(item =>
+        item._id === product._id ? { ...item, qty: item.qty + 1 } : item
+      );
+    }
+    return [...prevCart, { ...product, qty: 1 }];
+  });
+};
   const fetchData = async () => {
     try {
       const pRes = await fetch('http://localhost:8000/api/products');
@@ -94,9 +105,9 @@ export default function App() {
       )}
 
       <main style={{ padding: '20px 5%' }}>
-        {view === 'shop' && <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={(p) => setCart([...cart, {...p, qty: 1}])} setView={setView} setSelectedProduct={setSelectedProduct} />}
+        {view === 'shop' && <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} />}
         {view === 'cart' && <Cart cart={cart} setCart={setCart} user={user} setView={setView} />}
-        {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={(p) => setCart([...cart, {...p, qty: 1}])} setView={setView} />}
+        {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} />}
         
         {(view === 'login' || view === 'register') && (
           <AuthCard 

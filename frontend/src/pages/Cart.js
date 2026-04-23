@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from 'react';
 
-export default function Cart({ cart, setCart, showCheckout, setShowCheckout, setView, user }) {
+export default function Cart({ cart, setCart, setView, user }) {
+  const [showCheckout, setShowCheckout] = useState(false);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', cardNumber: '', expiry: '', cvv: '' });
   const [paymentStatus, setPaymentStatus] = useState(null); 
-  const [guestMode, setGuestMode] = useState(false); 
+
   
   const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const removeItem = (id) => {
+  setCart(cart.filter(item => item._id !== id));
+};
+
+const updateQty = (id, newQty) => {
+  if (newQty < 1) {
+    removeItem(id);
+    return;
+  }
+  setCart(cart.map(item => 
+    item._id === id ? { ...item, qty: newQty } : item
+  ));
+};
 
   
   useEffect(() => {
@@ -41,46 +55,13 @@ export default function Cart({ cart, setCart, showCheckout, setShowCheckout, set
   };
 
   const generateInvoice = () => {
-    alert(`Invoice Generated!\nCustomer: ${checkoutData.name}\nTotal: $${total}\nOrder Confirmed.`);
-    setCart([]);
-    setShowCheckout(false);
-    setGuestMode(false);
-    setView('shop');
-  };
+  alert(`Invoice Generated!\nCustomer: ${checkoutData.name}\nTotal: $${total}\nOrder Confirmed.`);
+  setCart([]);
+  setShowCheckout(false);
+  setView('shop');
+};
 
   if (showCheckout) {
-    
-    if (!user && !guestMode) {
-      return (
-        <div style={{ maxWidth: '500px', margin: '50px auto', padding: '40px', backgroundColor: '#fff', borderRadius: '15px', textAlign: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ marginBottom: '15px' }}>Checkout Options</h2>
-          <p style={{ color: '#666', marginBottom: '30px' }}>You need an account to track orders, or you can continue as a guest.</p>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <button 
-              onClick={() => { setShowCheckout(false); setView('login'); }} 
-              style={{ padding: '15px', backgroundColor: '#111', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' }}
-            >
-              Login / Register
-            </button>
-            
-            <div style={{ margin: '5px 0', color: '#aaa', fontWeight: 'bold' }}>OR</div>
-            
-            <button 
-              onClick={() => setGuestMode(true)} 
-              style={{ padding: '15px', backgroundColor: '#fff', color: '#111', border: '2px solid #111', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' }}
-            >
-              Checkout as Guest
-            </button>
-          </div>
-          
-          <button onClick={() => setShowCheckout(false)} style={{ marginTop: '25px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', textDecoration: 'underline' }}>
-            Cancel and Return to Cart
-          </button>
-        </div>
-      );
-    }
-
     
     if (paymentStatus === 'success') {
       return (
@@ -97,7 +78,7 @@ export default function Cart({ cart, setCart, showCheckout, setShowCheckout, set
     
     return (
       <div style={{ maxWidth: '600px', margin: '0 auto', padding: '40px', backgroundColor: '#fff', borderRadius: '15px' }}>
-        <h2>{user ? 'Checkout' : 'Guest Checkout'}</h2>
+        <h2>Checkout</h2>
         <div style={{ marginBottom: '20px', fontSize: '18px' }}>Total to Pay: <strong>${total}</strong></div>
         
         {paymentStatus === 'fail' && <div style={{ color: 'red', marginBottom: '15px' }}>❌ Invalid card details. Transaction rejected.</div>}
@@ -118,7 +99,7 @@ export default function Cart({ cart, setCart, showCheckout, setShowCheckout, set
             {paymentStatus === 'processing' ? 'Processing Payment...' : 'Complete Payment'}
           </button>
         </form>
-        <button onClick={() => { setShowCheckout(false); setGuestMode(false); }} style={{ width: '100%', background: 'none', border: 'none', marginTop: '15px', cursor: 'pointer', color: '#666' }}>Cancel</button>
+        <button onClick={() => setShowCheckout(false)} style={{ width: '100%', background: 'none', border: 'none', marginTop: '15px', cursor: 'pointer', color: '#666' }}>Cancel</button>
       </div>
     );
   }
@@ -130,13 +111,68 @@ export default function Cart({ cart, setCart, showCheckout, setShowCheckout, set
       {cart.length === 0 ? <p>Your cart is empty.</p> : (
         <>
           {cart.map(item => (
-            <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px', backgroundColor: '#fff', borderBottom: '1px solid #eee', marginBottom: '10px', borderRadius: '8px' }}>
-              <span>{item.name} (x{item.qty})</span>
-              <span style={{ fontWeight: 'bold' }}>${item.price * item.qty}</span>
-            </div>
-          ))}
+  <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: '#fff', borderBottom: '1px solid #eee', marginBottom: '10px', borderRadius: '8px' }}>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontWeight: '600', marginBottom: '5px' }}>{item.name}</div>
+      <div style={{ color: '#666', fontSize: '14px' }}>${item.price} each</div>
+    </div>
+
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
+      <button 
+        onClick={() => updateQty(item._id, item.qty - 1)}
+        style={{ width: '30px', height: '30px', border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f9fafb', cursor: 'pointer', fontWeight: 'bold' }}
+      >
+        −
+      </button>
+      <span style={{ minWidth: '20px', textAlign: 'center', fontWeight: 'bold' }}>{item.qty}</span>
+      <button 
+        onClick={() => updateQty(item._id, item.qty + 1)}
+        style={{ width: '30px', height: '30px', border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f9fafb', cursor: 'pointer', fontWeight: 'bold' }}
+      >
+        +
+      </button>
+    </div>
+
+    <span style={{ fontWeight: 'bold', minWidth: '70px', textAlign: 'right', marginRight: '15px' }}>
+      ${item.price * item.qty}
+    </span>
+
+    <button 
+      onClick={() => removeItem(item._id)}
+      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: '600', padding: '8px 12px' }}
+    >
+      Remove
+    </button>
+  </div>
+))}
           <div style={{ textAlign: 'right', fontSize: '24px', fontWeight: '700', margin: '20px 0' }}>Total: ${total}</div>
-          <button onClick={() => setShowCheckout(true)} style={{ width: '100%', padding: '15px', backgroundColor: '#111', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '16px', cursor: 'pointer' }}>Buy Now (Checkout)</button>
+          {!user && (
+  <div style={{ padding: '15px', backgroundColor: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '8px', marginBottom: '15px', color: '#92400e', textAlign: 'center' }}>
+    🔒 You must sign in to complete your purchase.
+  </div>
+)}
+<button
+  onClick={() => {
+    if (!user) {
+      setView('login');
+    } else {
+      setShowCheckout(true);
+    }
+  }}
+  style={{
+    width: '100%',
+    padding: '15px',
+    backgroundColor: user ? '#111' : '#6b7280',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    fontWeight: '700',
+    fontSize: '16px',
+    cursor: 'pointer'
+  }}
+>
+  {user ? 'Buy Now (Checkout)' : 'Sign In to Checkout'}
+</button>
         </>
       )}
     </div>
