@@ -16,12 +16,13 @@ router.post('/', async (req, res) => {
         // Step 2: Verify the user actually purchased this product
         const Order = require('../models/Order');
         const purchased = await Order.findOne({
-            user: userId,
-            'items.productId': productId
-        });
-        if (!purchased) {
-            return res.status(403).json({ error: 'You can only review products you have purchased.' });
-        }
+    user: userId,
+    'items.productId': productId,
+    status: 'Delivered'
+});
+if (!purchased) {
+    return res.status(403).json({ error: 'You can only review products that have been delivered to you.' });
+}
 
         // Step 3: All checks passed — save the comment
         const newComment = new Comment({ productId, userId, userName, rating, comment });
@@ -106,7 +107,8 @@ router.get('/has-purchased/:userId/:productId', async (req, res) => {
         const Order = require('../models/Order');
         const order = await Order.findOne({
             user: req.params.userId,
-            'items.productId': req.params.productId
+            'items.productId': req.params.productId,
+            status: 'Delivered'
         });
         res.json({ hasPurchased: !!order });
     } catch (err) {

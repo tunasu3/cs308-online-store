@@ -40,11 +40,17 @@ const updateQty = (id, newQty) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-              customerName: checkoutData.name, 
-              address: checkoutData.address,
-              items: cart,
-              totalAmount: total,
-              status: 'Processing'
+              userId: user._id,
+              userName: user.fullName || checkoutData.name,
+              userEmail: user.email || '',
+              items: cart.map(item => ({
+                productId: item._id,
+                name: item.name,
+                price: item.price,
+                quantity: item.qty
+              })),
+              totalPrice: total,
+              deliveryAddress: checkoutData.address
             })
           });
         } catch (err) { console.error("Order processing error", err); }
@@ -53,7 +59,6 @@ const updateQty = (id, newQty) => {
       }
     }, 2000);
   };
-
   const generateInvoice = () => {
   alert(`Invoice Generated!\nCustomer: ${checkoutData.name}\nTotal: $${total}\nOrder Confirmed.`);
   setCart([]);

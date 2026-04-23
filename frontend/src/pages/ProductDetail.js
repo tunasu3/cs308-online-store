@@ -114,10 +114,10 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
 
         {/* CASE 2: Logged in but didn't buy → show "purchase required" */}
         {user && !hasPurchased && (
-          <div style={{ padding: '15px', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', marginBottom: '20px', color: '#991b1b' }}>
-            ⚠️ Only customers who have purchased this product can leave a review.
-          </div>
-        )}
+  <div style={{ padding: '15px', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', marginBottom: '20px', color: '#991b1b' }}>
+    ⚠️ You can only review this product once it has been delivered to you.
+  </div>
+)}
 
         {/* CASE 3: Logged in AND purchased → show the review form */}
         {user && hasPurchased && (

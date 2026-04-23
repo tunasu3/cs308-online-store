@@ -5,6 +5,7 @@ import ProductDetail from './pages/ProductDetail';
 import AuthCard from './pages/AuthCard';
 import ProductManager from './pages/Dashboard/ProductManager';
 import Cart from './pages/Cart';
+import MyOrders from './pages/MyOrders';
 
 export default function App() {
   const [view, setView] = useState('shop');
@@ -98,8 +99,14 @@ export default function App() {
             )}
 
             {user && (
-              <li onClick={() => { setUser(null); setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#666' }}>Logout</li>
-            )}
+  <li onClick={() => { setView('myOrders'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
+    📦 My Orders
+  </li>
+)}
+
+{user && (
+  <li onClick={() => { setUser(null); setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#666' }}>Logout</li>
+)}
           </ul>
         </div>
       )}
@@ -108,7 +115,8 @@ export default function App() {
         {view === 'shop' && <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} />}
         {view === 'cart' && <Cart cart={cart} setCart={setCart} user={user} setView={setView} />}
         {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} user={user} />}
-        
+        {view === 'myOrders' && <MyOrders user={user} setView={setView} />}
+
         {(view === 'login' || view === 'register') && (
           <AuthCard 
             view={view} 
