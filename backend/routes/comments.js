@@ -1,11 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const Comment = require('../models/Comment');
+const Order = require('../models/Order');
 
-// POST - Add comment
+// POST - Add comment (only if user purchased the product)
 router.post('/', async (req, res) => {
     try {
         const { productId, userId, userName, rating, comment } = req.body;
+
+        // Step 1: Validate the rating is between 1 and 5
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ error: 'Rating must be between 1 and 5 stars.' });
+        }
+
+        // Step 2: Verify the user actually purchased this product
+        const Order = require('../models/Order');
+        const purchased = await Order.findOne({
+            user: userId,
+            'items.productId': productId
+        });
+        if (!purchased) {
+            return res.status(403).json({ error: 'You can only review products you have purchased.' });
+        }
+
+        // Step 3: All checks passed — save the comment
         const newComment = new Comment({ productId, userId, userName, rating, comment });
         await newComment.save();
         res.status(201).json({ message: 'Comment submitted! Waiting for approval.', comment: newComment });
@@ -61,4 +79,38 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// GET - Check if a user is eligible to review a product
+router.get('/eligibility/:productId/:userId', async (req, res) => {
+    try {
+        const { productId, userId } = req.params;
+        
+        const purchase = await Order.findOne({
+            user: userId,
+            'items.productId': productId
+        });
+        
+        const alreadyReviewed = await Comment.findOne({ userId, productId });
+        
+        res.json({
+            canReview: !!purchase && !alreadyReviewed,
+            hasPurchased: !!purchase,
+            alreadyReviewed: !!alreadyReviewed
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// GET - Check if a user has purchased a specific product
+router.get('/has-purchased/:userId/:productId', async (req, res) => {
+    try {
+        const Order = require('../models/Order');
+        const order = await Order.findOne({
+            user: req.params.userId,
+            'items.productId': req.params.productId
+        });
+        res.json({ hasPurchased: !!order });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 module.exports = router;
