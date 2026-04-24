@@ -7,6 +7,8 @@ export default function ProductManager({ products, categories = [], fetchData, d
 
   const [newProduct, setNewProduct] = useState({ name: '', price: '', stock: '', category: '', description: '' });
   const [newCategory, setNewCategory] = useState({ name: '' });
+  const [editingId, setEditingId] = useState(null);
+
 
   const fetchOrders = async () => {
     try {
@@ -34,17 +36,40 @@ export default function ProductManager({ products, categories = [], fetchData, d
   }, []);
 
   const handleAddProduct = async (e) => {
-    e.preventDefault();
-    try {
-      await fetch('http://localhost:8000/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProduct)
-      });
-      fetchData();
-      setNewProduct({ name: '', price: '', stock: '', category: '', description: '' });
-    } catch (err) {}
-  };
+  e.preventDefault();
+  try {
+    const url = editingId
+      ? `http://localhost:8000/api/products/${editingId}`
+      : 'http://localhost:8000/api/products';
+    const method = editingId ? 'PUT' : 'POST';
+
+    await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newProduct)
+    });
+    fetchData();
+    setNewProduct({ name: '', price: '', stock: '', category: '', description: '' });
+    setEditingId(null);
+  } catch (err) { console.error(err); }
+};
+
+const startEdit = (p) => {
+  setEditingId(p._id);
+  setNewProduct({
+    name: p.name || '',
+    price: p.price || '',
+    stock: p.stock || '',
+    category: p.category || '',
+    description: p.description || ''
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const cancelEdit = () => {
+  setEditingId(null);
+  setNewProduct({ name: '', price: '', stock: '', category: '', description: '' });
+};
 
   const handleAddCategory = async (e) => {
     e.preventDefault();
@@ -134,7 +159,7 @@ export default function ProductManager({ products, categories = [], fetchData, d
         {activeTab === 'products' && (
           <div>
             <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '40px', backgroundColor: '#f9fafb', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-              <h4 style={{ margin: '0 0 10px 0', color: '#111827' }}>Add New Product</h4>
+              
               <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '15px' }}>
                 <input type="text" placeholder="Product Name" required value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} style={inputStyle} />
                 <input type="number" placeholder="Price ($)" required value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} style={inputStyle} />
@@ -146,7 +171,14 @@ export default function ProductManager({ products, categories = [], fetchData, d
               </div>
               <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
                 <textarea placeholder="Enter product description here..." required value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} style={{ ...inputStyle, minHeight: '80px', flexGrow: 1, resize: 'vertical' }} />
-                <button type="submit" style={{ padding: '0 40px', height: '80px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}>Publish</button>
+                <button type="submit" style={{ padding: '0 40px', height: '80px', backgroundColor: editingId ? '#10b981' : '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}>
+  {editingId ? 'Save Changes' : 'Publish'}
+</button>
+{editingId && (
+  <button type="button" onClick={cancelEdit} style={{ padding: '0 30px', height: '80px', backgroundColor: '#6b7280', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}>
+    Cancel
+  </button>
+)}
               </div>
             </form>
 
@@ -177,8 +209,11 @@ export default function ProductManager({ products, categories = [], fetchData, d
                       <span style={{ backgroundColor: '#f3f4f6', padding: '4px 8px', borderRadius: '4px', fontSize: '13px' }}>{p.category}</span>
                     </td>
                     <td style={{ padding: '15px' }}>
-                      <button onClick={() => deleteProduct(p._id)} style={{ color: '#ef4444', background: '#fef2f2', border: 'none', cursor: 'pointer', fontWeight: '600', padding: '8px 12px', borderRadius: '6px' }}>Delete</button>
-                    </td>
+  <div style={{ display: 'flex', gap: '8px' }}>
+    <button onClick={() => startEdit(p)} style={{ color: '#1d4ed8', background: '#eff6ff', border: 'none', cursor: 'pointer', fontWeight: '600', padding: '8px 12px', borderRadius: '6px' }}>Edit</button>
+    <button onClick={() => deleteProduct(p._id)} style={{ color: '#ef4444', background: '#fef2f2', border: 'none', cursor: 'pointer', fontWeight: '600', padding: '8px 12px', borderRadius: '6px' }}>Delete</button>
+  </div>
+</td>
                   </tr>
                 ))}
               </tbody>
