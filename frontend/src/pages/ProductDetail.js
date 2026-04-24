@@ -8,8 +8,10 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
   const [hasPurchased, setHasPurchased] = useState(false);
   const isOutOfStock = product.stock === 0;
 
-  
   const productRating = product.rating || 0;
+  const discountedPrice = product.discount > 0 
+    ? (product.price * (1 - product.discount / 100)).toFixed(2) 
+    : product.price;
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/comments/product/${product._id}`)
@@ -27,12 +29,10 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
 
   const handleAddReview = async (e) => {
     e.preventDefault();
-
     if (rating < 1 || rating > 5) {
       alert('Please select a star rating (1-5 stars).');
       return;
     }
-    
     if (review.trim() === '') {
       alert('Please write a review before submitting.');
       return;
@@ -51,12 +51,10 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
         })
       });
       const data = await res.json();
-
       if (!res.ok) {
         alert(data.error || 'Could not submit review.');
         return;
       }
-
       alert('Review submitted! It will appear after approval.');
       setReview('');
       setRating(0);
@@ -71,12 +69,11 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
       <button onClick={() => setView('shop')} style={{ marginBottom: '20px', cursor: 'pointer', background: 'none', border: 'none', color: '#3b82f6' }}>← Go Back</button>
       
       <div style={{ display: 'flex', gap: '30px' }}>
-        <img src={product.imageUrl || 'https://via.placeholder.com/400'} alt={product.name} style={{ width: '400px', height: '400px', objectFit: 'cover', borderRadius: '10px' }} />
+        <img src={product.image || product.imageUrl || 'https://via.placeholder.com/400'} alt={product.name} style={{ width: '400px', height: '400px', objectFit: 'cover', borderRadius: '10px' }} />
         
         <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: '28px', marginBottom: '5px' }}>{product.name}</h2>
           
-          {/* */}
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px', gap: '8px' }}>
             <span style={{ color: '#fbbf24', fontSize: '18px' }}>
               {'★'.repeat(Math.round(productRating))}
@@ -87,7 +84,18 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
             </span>
           </div>
 
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981', marginBottom: '20px' }}>${product.price}</p>
+          <div style={{ marginBottom: '20px' }}>
+            {product.discount > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>${discountedPrice}</span>
+                <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '18px' }}>${product.price}</span>
+                <span style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold' }}>%{product.discount} OFF</span>
+              </div>
+            ) : (
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>${product.price}</p>
+            )}
+          </div>
+
           <p style={{ color: '#666', lineHeight: '1.6', whiteSpace: 'pre-line' }}>{product.description}</p>
           
           <div style={{ marginTop: '30px' }}>
@@ -113,19 +121,16 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
 
       <div style={{ marginTop: '50px', borderTop: '1px solid #eee', paddingTop: '30px' }}>
         <h3>Product Reviews</h3>
-
         {!user && (
           <div style={{ padding: '15px', backgroundColor: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '8px', marginBottom: '20px', color: '#92400e' }}>
             🔒 Please sign in to leave a review.
           </div>
         )}
-
         {user && !hasPurchased && (
           <div style={{ padding: '15px', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', marginBottom: '20px', color: '#991b1b' }}>
             ⚠️ You can only review this product once it has been delivered to you.
           </div>
         )}
-
         {user && hasPurchased && (
           <form onSubmit={handleAddReview} style={{ marginBottom: '20px', padding: '20px', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
             <div style={{ marginBottom: '15px' }}>
@@ -152,7 +157,6 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
                 </span>
               </div>
             </div>
-
             <div style={{ display: 'flex', gap: '10px' }}>
               <input
                 type="text"
@@ -167,7 +171,6 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
             </div>
           </form>
         )}
-
         {reviews.length === 0 ? (
           <p style={{ color: '#666' }}>No reviews yet. Be the first!</p>
         ) : (

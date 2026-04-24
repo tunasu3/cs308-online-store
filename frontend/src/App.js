@@ -4,6 +4,7 @@ import Shop from './pages/Shop';
 import ProductDetail from './pages/ProductDetail';
 import AuthCard from './pages/AuthCard';
 import ProductManager from './pages/Dashboard/ProductManager';
+import SalesManager from './pages/Dashboard/SalesManager';
 import Cart from './pages/Cart';
 import MyOrders from './pages/MyOrders';
 
@@ -19,16 +20,17 @@ export default function App() {
   const [authData, setAuthData] = useState({ email: '', password: '', fullName: '', taxId: '', address: '' });
   
   const addToCart = (product) => {
-  setCart(prevCart => {
-    const existing = prevCart.find(item => item._id === product._id);
-    if (existing) {
-      return prevCart.map(item =>
-        item._id === product._id ? { ...item, qty: item.qty + 1 } : item
-      );
-    }
-    return [...prevCart, { ...product, qty: 1 }];
-  });
-};
+    setCart(prevCart => {
+      const existing = prevCart.find(item => item._id === product._id);
+      if (existing) {
+        return prevCart.map(item =>
+          item._id === product._id ? { ...item, qty: item.qty + 1 } : item
+        );
+      }
+      return [...prevCart, { ...product, qty: 1 }];
+    });
+  };
+
   const fetchData = async () => {
     try {
       const pRes = await fetch('http://localhost:8000/api/products');
@@ -92,21 +94,26 @@ export default function App() {
           <ul style={{ listStyle: 'none', padding: 0, marginTop: '20px' }}>
             <li onClick={() => { setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>Shop</li>
             
-            {user?.role === 'ProductManager' && (
-              <li onClick={() => { setView('products'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}>
-                🛡️ ProductManager Dashboard
+            {(user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin') && (
+              <>
+                <li onClick={() => { setView('products'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}>
+                  Product Manager Dashboard
+                </li>
+                <li onClick={() => { setView('salesManager'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}>
+                  Sales Manager Dashboard
+                </li>
+              </>
+            )}
+
+            {user && (
+              <li onClick={() => { setView('myOrders'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
+                 My Orders
               </li>
             )}
 
             {user && (
-  <li onClick={() => { setView('myOrders'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
-    📦 My Orders
-  </li>
-)}
-
-{user && (
-  <li onClick={() => { setUser(null); setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#666' }}>Logout</li>
-)}
+              <li onClick={() => { setUser(null); setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#666' }}>Logout</li>
+            )}
           </ul>
         </div>
       )}
@@ -116,6 +123,7 @@ export default function App() {
         {view === 'cart' && <Cart cart={cart} setCart={setCart} user={user} setView={setView} />}
         {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} user={user} />}
         {view === 'myOrders' && <MyOrders user={user} setView={setView} />}
+        {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} />)}
 
         {(view === 'login' || view === 'register') && (
           <AuthCard 
@@ -128,7 +136,7 @@ export default function App() {
         )}
 
         {view === 'products' && (
-          user?.role === 'ProductManager' ? (
+          (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin') ? (
             <ProductManager products={products} categories={categories} fetchData={fetchData} deleteProduct={deleteProduct} />
           ) : (
             <div style={{ textAlign: 'center', marginTop: '50px' }}>

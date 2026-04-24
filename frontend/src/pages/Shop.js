@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-
 const Stars = ({ value }) => {
   const numValue = Number(value) || 0;
   const full = Math.floor(numValue);
@@ -10,8 +9,6 @@ const Stars = ({ value }) => {
     <div style={{ display: 'flex', gap: '2px', fontSize: '14px' }}>
       {[...Array(5)].map((_, i) => {
         if (i < full) return <span key={i} style={{ color: '#fbbf24' }}>★</span>;
-        
-        
         if (i === full && half) return <span key={i} style={{ color: '#fbbf24' }}>★</span>; 
         return <span key={i} style={{ color: '#e5e7eb' }}>★</span>;
       })}
@@ -59,22 +56,24 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
 
     const matchesStock = inStockOnly ? p.stock > 0 : true;
 
-    const matchesPrice =
-      p.price >= priceRange.min && p.price <= priceRange.max;
+    const currentPrice = p.discount > 0 ? p.price * (1 - p.discount / 100) : p.price;
+    const matchesPrice = currentPrice >= priceRange.min && currentPrice <= priceRange.max;
 
     return matchesSearch && matchesCategory && matchesStock && matchesPrice;
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
-    if (sortBy === 'priceLow') return a.price - b.price;
-    if (sortBy === 'priceHigh') return b.price - a.price;
-    if (sortBy === 'popularity') return (b.rating || 0) - (a.rating || 0); // Popularity rating'e bağlandı
+    const priceA = a.discount > 0 ? a.price * (1 - a.discount / 100) : a.price;
+    const priceB = b.discount > 0 ? b.price * (1 - b.discount / 100) : b.price;
+
+    if (sortBy === 'priceLow') return priceA - priceB;
+    if (sortBy === 'priceHigh') return priceB - priceA;
+    if (sortBy === 'popularity') return (b.rating || 0) - (a.rating || 0);
     return 0;
   });
 
   return (
     <div style={{ display: 'flex', gap: '30px', marginTop: '20px', alignItems: 'flex-start' }}>
-
       <aside style={{
         width: '260px',
         position: 'sticky',
@@ -84,15 +83,12 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
         padding: '24px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
       }}>
-
         <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '24px', color: '#111827' }}>Filters</h3>
-
         <div style={{ marginBottom: '24px' }}>
           <div onClick={() => toggle('category')} style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '16px' }}>
             <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>CATEGORIES</span>
             <span style={{ color: '#6b7280' }}>{open.category ? '-' : '+'}</span>
           </div>
-
           {open.category && derivedCategories.map(cat => (
             <label key={cat} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', cursor: 'pointer', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -104,9 +100,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                 />
                 <span style={{ fontSize: '14px', color: '#374151' }}>{cat}</span>
               </div>
-              <span style={{ fontSize: '12px', color: '#9ca3af' }}>
-                ({getCategoryCount(cat)})
-              </span>
+              <span style={{ fontSize: '12px', color: '#9ca3af' }}>({getCategoryCount(cat)})</span>
             </label>
           ))}
         </div>
@@ -116,7 +110,6 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
             <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>STOCK</span>
             <span style={{ color: '#6b7280' }}>{open.stock ? '-' : '+'}</span>
           </div>
-
           {open.stock && (
             <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#374151', cursor: 'pointer', alignItems: 'center' }}>
               In Stock Only
@@ -135,7 +128,6 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
             <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PRICE RANGE</span>
             <span style={{ color: '#6b7280' }}>{open.price ? '-' : '+'}</span>
           </div>
-
           {open.price && (
             <>
               <input
@@ -146,7 +138,6 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                 onChange={(e) => setPriceRange({ ...priceRange, max: Number(e.target.value) })}
                 style={{ width: '100%', accentColor: '#111827', cursor: 'pointer' }}
               />
-
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginTop: '12px', color: '#4b5563' }}>
                 <div style={{ border: '1px solid #e5e7eb', padding: '6px 12px', borderRadius: '6px' }}>Min $0</div>
                 <div style={{ border: '1px solid #e5e7eb', padding: '6px 12px', borderRadius: '6px' }}>Max ${priceRange.max}</div>
@@ -154,13 +145,11 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
             </>
           )}
         </div>
-
       </aside>
 
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', backgroundColor: '#ffffff', padding: '16px 24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <span style={{ color: '#4b5563', fontSize: '14px' }}>Showing <strong>{sortedProducts.length}</strong> products</span>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '14px', color: '#6b7280' }}>Sort by:</span>
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #e5e7eb', outline: 'none', cursor: 'pointer', backgroundColor: '#fff', color: '#111827', fontSize: '14px' }}>
@@ -172,113 +161,106 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
           </div>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-          gap: '24px'
-        }}>
-          {sortedProducts.map(product => (
-            <div
-              key={product._id}
-              style={{
-                backgroundColor: '#ffffff',
-                borderRadius: '12px',
-                padding: '20px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                opacity: product.stock === 0 ? 0.7 : 1
-              }}
-              onMouseEnter={(e) => {
-                if (product.stock !== 0) {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (product.stock !== 0) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-                }
-              }}
-            >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '24px' }}>
+          {sortedProducts.map(product => {
+            const finalPrice = product.discount > 0 ? (product.price * (1 - product.discount / 100)).toFixed(2) : product.price;
+            return (
               <div
-                onClick={() => { setSelectedProduct(product); setView('productDetail'); }}
-                style={{ position: 'relative', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}
+                key={product._id}
+                style={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  opacity: product.stock === 0 ? 0.7 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (product.stock !== 0) {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (product.stock !== 0) {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                  }
+                }}
               >
-                <img
-                  src={product.image || product.imageUrl || 'https://via.placeholder.com/200'}
-                  alt={product.name}
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    objectFit: 'contain',
-                    filter: product.stock === 0 ? 'grayscale(100%)' : 'none'
-                  }}
-                />
-
-                {product.stock === 0 && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '0',
-                    right: '0',
-                    background: '#ef4444',
-                    color: '#ffffff',
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: '700'
-                  }}>
-                    SOLD OUT
-                  </span>
-                )}
-              </div>
-
-              {/* DİNAMİK YILDIZLAR VE PUAN ALANI BURADA GÜNCELLENDİ */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <Stars value={product.rating || 0} />
-                <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: '600' }}>
-                  ({product.rating ? product.rating.toFixed(1) : '0'})
-                </span>
-              </div>
-
-              <h4 
-                style={{ color: '#111827', fontSize: '15px', fontWeight: '500', marginBottom: '20px', lineHeight: '1.4' }} 
-                onClick={() => { setSelectedProduct(product); setView('productDetail'); }}
-              >
-                {product.name}
-              </h4>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                <span style={{ color: '#111827', fontWeight: '700', fontSize: '20px' }}>
-                  ${product.price}
-                </span>
-
-                <button
-                  onClick={(e) => { e.stopPropagation(); addToCart(product); }}
-                  disabled={product.stock === 0}
-                  style={{
-                    padding: '8px 20px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    background: product.stock === 0 ? '#f3f4f6' : '#111827',
-                    color: product.stock === 0 ? '#9ca3af' : '#ffffff',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
-                    transition: 'background 0.2s'
-                  }}
+                <div
+                  onClick={() => { setSelectedProduct(product); setView('productDetail'); }}
+                  style={{ position: 'relative', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}
                 >
-                  {product.stock === 0 ? 'Out' : 'Add'}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+                  <img
+                    src={product.image || product.imageUrl || 'https://via.placeholder.com/200'}
+                    alt={product.name}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      objectFit: 'contain',
+                      filter: product.stock === 0 ? 'grayscale(100%)' : 'none'
+                    }}
+                  />
+                  {product.stock === 0 && (
+                    <span style={{ position: 'absolute', top: '0', right: '0', background: '#ef4444', color: '#ffffff', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}>SOLD OUT</span>
+                  )}
+                  {product.discount > 0 && product.stock !== 0 && (
+                    <span style={{ position: 'absolute', top: '0', left: '0', background: '#ef4444', color: '#ffffff', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>%{product.discount} OFF</span>
+                  )}
+                </div>
 
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <Stars value={product.rating || 0} />
+                  <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: '600' }}>
+                    ({product.rating ? product.rating.toFixed(1) : '0'})
+                  </span>
+                </div>
+
+                <h4 
+                  style={{ color: '#111827', fontSize: '15px', fontWeight: '500', marginBottom: '20px', lineHeight: '1.4' }} 
+                  onClick={() => { setSelectedProduct(product); setView('productDetail'); }}
+                >
+                  {product.name}
+                </h4>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {product.discount > 0 ? (
+                      <>
+                        <span style={{ color: '#9ca3af', textDecoration: 'line-through', fontSize: '13px' }}>${product.price}</span>
+                        <span style={{ color: '#111827', fontWeight: '700', fontSize: '18px' }}>${finalPrice}</span>
+                      </>
+                    ) : (
+                      <span style={{ color: '#111827', fontWeight: '700', fontSize: '20px' }}>${product.price}</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                    disabled={product.stock === 0}
+                    style={{
+                      padding: '8px 20px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: product.stock === 0 ? '#f3f4f6' : '#111827',
+                      color: product.stock === 0 ? '#9ca3af' : '#ffffff',
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s'
+                    }}
+                  >
+                    {product.stock === 0 ? 'Out' : 'Add'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
         {sortedProducts.length === 0 && (
           <div style={{ textAlign: 'center', marginTop: '60px', color: '#6b7280', fontSize: '16px', backgroundColor: '#ffffff', padding: '40px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             No products found matching your criteria.
