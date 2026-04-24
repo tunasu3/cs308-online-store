@@ -73,7 +73,7 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
         <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: '28px', marginBottom: '10px' }}>{product.name}</h2>
           <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981', marginBottom: '20px' }}>${product.price}</p>
-          <p style={{ color: '#666', lineHeight: '1.6' }}>{product.description}</p>
+          <p style={{ color: '#666', lineHeight: '1.6', whiteSpace: 'pre-line' }}>{product.description}</p>
           
           <div style={{ marginTop: '30px' }}>
             <button 
