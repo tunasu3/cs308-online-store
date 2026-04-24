@@ -1,6 +1,22 @@
 import React, { useState } from 'react';
 
-export default function Shop({ products, categories, searchTerm, addToCart, setView, setSelectedProduct }) {
+const Stars = ({ value }) => {
+  const numValue = Number(value) || 0;
+  const full = Math.floor(numValue);
+  const half = numValue % 1 >= 0.5;
+
+  return (
+    <div style={{ display: 'flex', gap: '2px', fontSize: '14px' }}>
+      {[...Array(5)].map((_, i) => {
+        if (i < full) return <span key={i} style={{ color: '#fbbf24' }}>★</span>;
+        if (i === full && half) return <span key={i} style={{ color: '#fbbf24' }}>☆</span>;
+        return <span key={i} style={{ color: '#e5e7eb' }}>★</span>;
+      })}
+    </div>
+  );
+};
+
+export default function Shop({ products, searchTerm, addToCart, setView, setSelectedProduct }) {
   const [sortBy, setSortBy] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -57,33 +73,33 @@ export default function Shop({ products, categories, searchTerm, addToCart, setV
     <div style={{ display: 'flex', gap: '30px', marginTop: '20px', alignItems: 'flex-start' }}>
 
       <aside style={{
-        width: '290px',
+        width: '260px',
         position: 'sticky',
         top: '20px',
-        background: '#fff',
-        borderRadius: '18px',
-        padding: '20px',
-        boxShadow: '0 12px 35px rgba(0,0,0,0.06)'
+        background: '#ffffff',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
       }}>
 
-        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>Filters</h3>
+        <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '24px', color: '#111827' }}>Filters</h3>
 
-        <div style={{ marginBottom: '25px' }}>
-          <div onClick={() => toggle('category')} style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '10px' }}>
-            <span style={{ fontSize: '12px', color: '#9ca3af', letterSpacing: '1px' }}>CATEGORIES</span>
-            <span>{open.category ? '-' : '+'}</span>
+        <div style={{ marginBottom: '24px' }}>
+          <div onClick={() => toggle('category')} style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '16px' }}>
+            <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>CATEGORIES</span>
+            <span style={{ color: '#6b7280' }}>{open.category ? '-' : '+'}</span>
           </div>
 
           {open.category && derivedCategories.map(cat => (
-            <label key={cat} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', cursor: 'pointer' }}>
+            <label key={cat} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', cursor: 'pointer', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input
                   type="checkbox"
                   checked={selectedCategories.includes(cat)}
                   onChange={() => handleCategoryChange(cat)}
-                  style={{ width: '16px', height: '16px', accentColor: '#111827' }}
+                  style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
                 />
-                <span>{cat}</span>
+                <span style={{ fontSize: '14px', color: '#374151' }}>{cat}</span>
               </div>
               <span style={{ fontSize: '12px', color: '#9ca3af' }}>
                 ({getCategoryCount(cat)})
@@ -92,28 +108,29 @@ export default function Shop({ products, categories, searchTerm, addToCart, setV
           ))}
         </div>
 
-        <div style={{ marginBottom: '25px' }}>
-          <div onClick={() => toggle('stock')} style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '10px' }}>
-            <span style={{ fontSize: '12px', color: '#9ca3af', letterSpacing: '1px' }}>STOCK</span>
-            <span>{open.stock ? '-' : '+'}</span>
+        <div style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #f3f4f6' }}>
+          <div onClick={() => toggle('stock')} style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '16px' }}>
+            <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>STOCK</span>
+            <span style={{ color: '#6b7280' }}>{open.stock ? '-' : '+'}</span>
           </div>
 
           {open.stock && (
-            <label style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer' }}>
+            <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#374151', cursor: 'pointer', alignItems: 'center' }}>
               In Stock Only
               <input
                 type="checkbox"
                 checked={inStockOnly}
                 onChange={(e) => setInStockOnly(e.target.checked)}
+                style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
               />
             </label>
           )}
         </div>
 
         <div>
-          <div onClick={() => toggle('price')} style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '10px' }}>
-            <span style={{ fontSize: '12px', color: '#9ca3af', letterSpacing: '1px' }}>PRICE</span>
-            <span>{open.price ? '-' : '+'}</span>
+          <div onClick={() => toggle('price')} style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '16px' }}>
+            <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PRICE RANGE</span>
+            <span style={{ color: '#6b7280' }}>{open.price ? '-' : '+'}</span>
           </div>
 
           {open.price && (
@@ -124,12 +141,12 @@ export default function Shop({ products, categories, searchTerm, addToCart, setV
                 max="50000"
                 value={priceRange.max}
                 onChange={(e) => setPriceRange({ ...priceRange, max: Number(e.target.value) })}
-                style={{ width: '100%' }}
+                style={{ width: '100%', accentColor: '#111827', cursor: 'pointer' }}
               />
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginTop: '8px' }}>
-                <span>${priceRange.min}</span>
-                <span>${priceRange.max}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginTop: '12px', color: '#4b5563' }}>
+                <div style={{ border: '1px solid #e5e7eb', padding: '6px 12px', borderRadius: '6px' }}>Min $0</div>
+                <div style={{ border: '1px solid #e5e7eb', padding: '6px 12px', borderRadius: '6px' }}>Max ${priceRange.max}</div>
               </div>
             </>
           )}
@@ -138,54 +155,120 @@ export default function Shop({ products, categories, searchTerm, addToCart, setV
       </aside>
 
       <div style={{ flex: 1 }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '20px',
-          background: '#fff',
-          padding: '15px 20px',
-          borderRadius: '12px',
-          boxShadow: '0 6px 20px rgba(0,0,0,0.04)'
-        }}>
-          <span>Showing {sortedProducts.length} products</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', backgroundColor: '#ffffff', padding: '16px 24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <span style={{ color: '#4b5563', fontSize: '14px' }}>Showing <strong>{sortedProducts.length}</strong> products</span>
 
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="">Featured</option>
-            <option value="priceLow">Low → High</option>
-            <option value="priceHigh">High → Low</option>
-            <option value="popularity">Top Rated</option>
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '14px', color: '#6b7280' }}>Sort by:</span>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #e5e7eb', outline: 'none', cursor: 'pointer', backgroundColor: '#fff', color: '#111827', fontSize: '14px' }}>
+              <option value="">Featured</option>
+              <option value="priceLow">Price: Low to High</option>
+              <option value="priceHigh">Price: High to Low</option>
+              <option value="popularity">Top Rated</option>
+            </select>
+          </div>
         </div>
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
           gap: '24px'
         }}>
           {sortedProducts.map(product => (
             <div
               key={product._id}
               style={{
-                background: '#fff',
-                borderRadius: '16px',
-                padding: '16px',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
-                transition: '0.2s',
-                cursor: 'pointer'
+                backgroundColor: '#ffffff',
+                borderRadius: '12px',
+                padding: '20px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                opacity: product.stock === 0 ? 0.7 : 1
               }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-6px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              onMouseEnter={(e) => {
+                if (product.stock !== 0) {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (product.stock !== 0) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                }
+              }}
             >
-              <div onClick={() => { setSelectedProduct(product); setView('productDetail'); }}>
-                <img src={product.imageUrl} alt="" style={{ width: '100%', height: '200px', objectFit: 'contain' }} />
+              <div
+                onClick={() => { setSelectedProduct(product); setView('productDetail'); }}
+                style={{ position: 'relative', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}
+              >
+                <img
+                  src={product.image || product.imageUrl || 'https://via.placeholder.com/200'}
+                  alt={product.name}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',
+                    filter: product.stock === 0 ? 'grayscale(100%)' : 'none'
+                  }}
+                />
+
+                {product.stock === 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '0',
+                    right: '0',
+                    background: '#ef4444',
+                    color: '#ffffff',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}>
+                    SOLD OUT
+                  </span>
+                )}
               </div>
 
-              <h4 style={{ fontSize: '15px', margin: '10px 0' }}>{product.name}</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Stars value={product.rating || product.averageRating || product.ratings || 0} />
+                <span style={{ fontSize: '13px', color: '#9ca3af' }}>
+                  ({product.reviewCount || product.numReviews || product.reviews?.length || 0})
+                </span>
+              </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: '700' }}>${product.price}</span>
-                <button onClick={(e) => { e.stopPropagation(); addToCart(product); }}>
-                  Add
+              <h4 
+                style={{ color: '#111827', fontSize: '15px', fontWeight: '500', marginBottom: '20px', lineHeight: '1.4' }} 
+                onClick={() => { setSelectedProduct(product); setView('productDetail'); }}
+              >
+                {product.name}
+              </h4>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                <span style={{ color: '#111827', fontWeight: '700', fontSize: '20px' }}>
+                  ${product.price}
+                </span>
+
+                <button
+                  onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                  disabled={product.stock === 0}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: product.stock === 0 ? '#f3f4f6' : '#111827',
+                    color: product.stock === 0 ? '#9ca3af' : '#ffffff',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  {product.stock === 0 ? 'Out' : 'Add'}
                 </button>
               </div>
             </div>
@@ -193,8 +276,8 @@ export default function Shop({ products, categories, searchTerm, addToCart, setV
         </div>
 
         {sortedProducts.length === 0 && (
-          <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            No products found
+          <div style={{ textAlign: 'center', marginTop: '60px', color: '#6b7280', fontSize: '16px', backgroundColor: '#ffffff', padding: '40px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            No products found matching your criteria.
           </div>
         )}
       </div>

@@ -12,21 +12,20 @@ app.use(cors({
 
 app.use(express.json());
 
-// Connect to MongoDB
 connectDB();
 
-// Routes
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const commentRoutes = require('./routes/comments');
+const categoryRoutes = require('./routes/categories');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/categories', categoryRoutes);
 
-// Keep their existing admin/order routes
 const Order = require('./models/Order');
 const Product = require('./models/Product');
 
@@ -39,10 +38,14 @@ app.get('/api/admin/orders', async (req, res) => {
     }
 });
 
-app.put('/api/admin/update-order/:id', async (req, res) => {
+app.put('/api/orders/:id', async (req, res) => {
     try {
-        await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
-        res.json({ message: "Updated" });
+        const updatedOrder = await Order.findByIdAndUpdate(
+            req.params.id, 
+            { status: req.body.status },
+            { new: true }
+        );
+        res.json(updatedOrder);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

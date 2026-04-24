@@ -8,33 +8,28 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
   const [hasPurchased, setHasPurchased] = useState(false);
   const isOutOfStock = product.stock === 0;
 
-  // Load approved reviews + check if this user has purchased this product
   useEffect(() => {
-    // Fetch all approved reviews for this product from the backend
     fetch(`http://localhost:8000/api/comments/product/${product._id}`)
       .then(res => res.json())
       .then(data => setReviews(data))
-      .catch(err => console.error('Error loading reviews:', err));
+      .catch(err => console.error(err));
 
-    // If a user is logged in, check if they purchased this product
     if (user) {
       fetch(`http://localhost:8000/api/comments/has-purchased/${user._id}/${product._id}`)
         .then(res => res.json())
         .then(data => setHasPurchased(data.hasPurchased))
-        .catch(err => console.error('Error checking purchase:', err));
+        .catch(err => console.error(err));
     }
   }, [product._id, user]);
 
-  // Submit the review to the backend
   const handleAddReview = async (e) => {
     e.preventDefault();
 
-    // Frontend validation: must select a star rating
     if (rating < 1 || rating > 5) {
       alert('Please select a star rating (1-5 stars).');
       return;
     }
-    // Frontend validation: must write something
+    
     if (review.trim() === '') {
       alert('Please write a review before submitting.');
       return;
@@ -55,7 +50,6 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
       const data = await res.json();
 
       if (!res.ok) {
-        // Backend rejected the request (e.g. didn't purchase, bad rating)
         alert(data.error || 'Could not submit review.');
         return;
       }
@@ -64,7 +58,7 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
       setReview('');
       setRating(0);
     } catch (err) {
-      console.error('Error submitting review:', err);
+      console.error(err);
       alert('Something went wrong. Please try again.');
     }
   };
@@ -105,24 +99,20 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
       <div style={{ marginTop: '50px', borderTop: '1px solid #eee', paddingTop: '30px' }}>
         <h3>Product Reviews</h3>
 
-        {/* CASE 1: Not logged in → show sign-in prompt */}
         {!user && (
           <div style={{ padding: '15px', backgroundColor: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '8px', marginBottom: '20px', color: '#92400e' }}>
             🔒 Please sign in to leave a review.
           </div>
         )}
 
-        {/* CASE 2: Logged in but didn't buy → show "purchase required" */}
         {user && !hasPurchased && (
-  <div style={{ padding: '15px', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', marginBottom: '20px', color: '#991b1b' }}>
-    ⚠️ You can only review this product once it has been delivered to you.
-  </div>
-)}
+          <div style={{ padding: '15px', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', marginBottom: '20px', color: '#991b1b' }}>
+            ⚠️ You can only review this product once it has been delivered to you.
+          </div>
+        )}
 
-        {/* CASE 3: Logged in AND purchased → show the review form */}
         {user && hasPurchased && (
           <form onSubmit={handleAddReview} style={{ marginBottom: '20px', padding: '20px', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
-            {/* Star rating selector */}
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Your Rating:</label>
               <div style={{ display: 'flex', gap: '5px' }}>
@@ -148,7 +138,6 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
               </div>
             </div>
 
-            {/* Text input + submit */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <input
                 type="text"
@@ -164,7 +153,6 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
           </form>
         )}
 
-        {/* List of approved reviews */}
         {reviews.length === 0 ? (
           <p style={{ color: '#666' }}>No reviews yet. Be the first!</p>
         ) : (

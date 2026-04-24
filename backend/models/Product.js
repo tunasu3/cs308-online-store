@@ -11,7 +11,8 @@ const ProductSchema = new mongoose.Schema({
     distributor: String,
     category: String,
     discount: { type: Number, default: 0 },
-    imageUrl: { type: String, default: '' }
+    imageUrl: { type: String, default: '' },
+    rating: { type: Number, default: 0 } 
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', ProductSchema);

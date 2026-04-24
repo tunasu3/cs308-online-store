@@ -1,18 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export default function ProductManager({ products, categories, fetchData, deleteProduct }) {
+export default function ProductManager({ products, categories = [], fetchData, deleteProduct }) {
   const [activeTab, setActiveTab] = useState('products');
-  const [deliveries, setDeliveries] = useState([
-    { id: 'DEL-101', customerId: 'CUST-99', productId: 'PROD-1', quantity: 2, totalPrice: 240, address: '123 Main St, NY', isCompleted: false },
-    { id: 'DEL-102', customerId: 'CUST-42', productId: 'PROD-3', quantity: 1, totalPrice: 50, address: '456 Oak Ave, CA', isCompleted: true }
-  ]);
-  const [comments, setComments] = useState([
-    { id: 'COM-1', user: 'John Doe', product: 'Gaming Mouse', text: 'Amazing quality!', status: 'pending' },
-    { id: 'COM-2', user: 'Jane Smith', product: 'Mechanical Keyboard', text: 'Keys are too loud.', status: 'pending' }
-  ]);
+  const [orders, setOrders] = useState([]);
+  const [reviews, setReviews] = useState([]);
 
   const [newProduct, setNewProduct] = useState({ name: '', price: '', stock: '', category: '', description: '' });
   const [newCategory, setNewCategory] = useState({ name: '' });
+
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/orders');
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data);
+      }
+    } catch (err) {}
+  };
+
+  const fetchPendingReviews = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/comments/pending');
+      if (res.ok) {
+        const data = await res.json();
+        setReviews(data);
+      }
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchOrders();
+    fetchPendingReviews();
+  }, []);
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -24,7 +43,7 @@ export default function ProductManager({ products, categories, fetchData, delete
       });
       fetchData();
       setNewProduct({ name: '', price: '', stock: '', category: '', description: '' });
-    } catch (err) { console.error(err); }
+    } catch (err) {}
   };
 
   const handleAddCategory = async (e) => {
@@ -37,15 +56,44 @@ export default function ProductManager({ products, categories, fetchData, delete
       });
       fetchData();
       setNewCategory({ name: '' });
-    } catch (err) { console.error(err); }
+    } catch (err) {}
   };
 
-  const toggleDeliveryStatus = (id) => {
-    setDeliveries(deliveries.map(d => d.id === id ? { ...d, isCompleted: !d.isCompleted } : d));
+  const updateOrderStatus = async (id, newStatus) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        fetchOrders();
+      }
+    } catch (err) {}
   };
 
-  const handleCommentStatus = (id, newStatus) => {
-    setComments(comments.map(c => c.id === id ? { ...c, status: newStatus } : c));
+  const handleApprove = async (id) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/comments/${id}/approve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        setReviews(reviews.filter(r => r._id !== id));
+      }
+    } catch (err) {}
+  };
+
+  const handleReject = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
+    try {
+      const res = await fetch(`http://localhost:8000/api/comments/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setReviews(reviews.filter(r => r._id !== id));
+      }
+    } catch (err) {}
   };
 
   const tabStyle = (tabName) => ({
@@ -75,10 +123,10 @@ export default function ProductManager({ products, categories, fetchData, delete
     <div style={{ maxWidth: '1100px', margin: '0 auto', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
       
       <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
-        <button style={tabStyle('products')} onClick={() => setActiveTab('products')}> Products & Stock</button>
-        <button style={tabStyle('categories')} onClick={() => setActiveTab('categories')}> Categories</button>
-        <button style={tabStyle('deliveries')} onClick={() => setActiveTab('deliveries')}> Deliveries</button>
-        <button style={tabStyle('comments')} onClick={() => setActiveTab('comments')}> Comments</button>
+        <button style={tabStyle('products')} onClick={() => setActiveTab('products')}>Products & Stock</button>
+        <button style={tabStyle('categories')} onClick={() => setActiveTab('categories')}>Categories</button>
+        <button style={tabStyle('deliveries')} onClick={() => setActiveTab('deliveries')}>Deliveries</button>
+        <button style={tabStyle('comments')} onClick={() => setActiveTab('comments')}>Comments</button>
       </div>
 
       <div style={{ padding: '30px' }}>
@@ -93,12 +141,12 @@ export default function ProductManager({ products, categories, fetchData, delete
                 <input type="number" placeholder="Stock Qty" required value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} style={inputStyle} />
                 <select required value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} style={inputStyle}>
                   <option value="">Select Category</option>
-                  {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+                  {categories && categories.length > 0 && categories.map(c => <option key={c._id || c.name} value={c.name}>{c.name}</option>)}
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
                 <textarea placeholder="Enter product description here..." required value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} style={{ ...inputStyle, minHeight: '80px', flexGrow: 1, resize: 'vertical' }} />
-                <button type="submit" style={{ padding: '0 40px', height: '80px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}>Publish Product</button>
+                <button type="submit" style={{ padding: '0 40px', height: '80px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}>Publish</button>
               </div>
             </form>
 
@@ -113,7 +161,7 @@ export default function ProductManager({ products, categories, fetchData, delete
                 </tr>
               </thead>
               <tbody>
-                {products.map(p => (
+                {products && products.map(p => (
                   <tr key={p._id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                     <td style={{ padding: '15px' }}>
                       <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>{p.name}</div>
@@ -145,10 +193,9 @@ export default function ProductManager({ products, categories, fetchData, delete
               <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Add</button>
             </form>
             <ul style={{ listStyle: 'none', padding: 0 }}>
-              {categories.map(c => (
-                <li key={c._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', border: '1px solid #e5e7eb', borderRadius: '8px', marginBottom: '10px', backgroundColor: '#f9fafb' }}>
+              {categories && categories.length > 0 && categories.map(c => (
+                <li key={c._id || c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', border: '1px solid #e5e7eb', borderRadius: '8px', marginBottom: '10px', backgroundColor: '#f9fafb' }}>
                   <span style={{ fontWeight: '500' }}>{c.name}</span>
-                  <button style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '500' }}>Remove</button>
                 </li>
               ))}
             </ul>
@@ -160,57 +207,58 @@ export default function ProductManager({ products, categories, fetchData, delete
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #e5e7eb', color: '#4b5563' }}>
-                  <th style={{ padding: '15px' }}>Delivery ID</th>
-                  <th style={{ padding: '15px' }}>Customer ID</th>
-                  <th style={{ padding: '15px' }}>Product ID</th>
-                  <th style={{ padding: '15px' }}>Qty</th>
-                  <th style={{ padding: '15px' }}>Total</th>
+                  <th style={{ padding: '15px' }}>Order ID</th>
+                  <th style={{ padding: '15px' }}>Customer</th>
+                  <th style={{ padding: '15px' }}>Total Amount</th>
                   <th style={{ padding: '15px' }}>Address</th>
                   <th style={{ padding: '15px' }}>Status</th>
-                  <th style={{ padding: '15px' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {deliveries.map(d => (
-                  <tr key={d.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                    <td style={{ padding: '15px', fontWeight: 'bold' }}>{d.id}</td>
-                    <td style={{ padding: '15px' }}>{d.customerId}</td>
-                    <td style={{ padding: '15px' }}>{d.productId}</td>
-                    <td style={{ padding: '15px' }}>{d.quantity}</td>
-                    <td style={{ padding: '15px', fontWeight: '600' }}>${d.totalPrice}</td>
-                    <td style={{ padding: '15px', maxWidth: '200px' }}>{d.address}</td>
+                {orders.map(order => (
+                  <tr key={order._id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    <td style={{ padding: '15px', fontWeight: 'bold' }}>#{order._id.substring(0, 8).toUpperCase()}</td>
+                    <td style={{ padding: '15px' }}>{order.userName || order.customerName || 'Guest'}</td>
+                    <td style={{ padding: '15px', fontWeight: '600' }}>${order.totalPrice || order.totalAmount}</td>
+                    <td style={{ padding: '15px', maxWidth: '200px' }}>{order.deliveryAddress}</td>
                     <td style={{ padding: '15px' }}>
-                      <span style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: d.isCompleted ? '#d1fae5' : '#fef3c7', color: d.isCompleted ? '#065f46' : '#92400e', fontWeight: 'bold', fontSize: '12px' }}>
-                        {d.isCompleted ? 'Completed' : 'Pending'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '15px' }}>
-                      <button onClick={() => toggleDeliveryStatus(d.id)} style={{ padding: '8px 12px', backgroundColor: d.isCompleted ? '#f3f4f6' : '#059669', color: d.isCompleted ? '#9ca3af' : '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
-                        {d.isCompleted ? 'Undo' : 'Mark Done'}
-                      </button>
+                      <select 
+                        value={order.status || 'Processing'} 
+                        onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                        style={{ padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', cursor: 'pointer', fontWeight: '600' }}
+                      >
+                        <option value="Processing">Processing</option>
+                        <option value="In-Transit">In-Transit</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {orders.length === 0 && <p style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>No orders found.</p>}
           </div>
         )}
 
         {activeTab === 'comments' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {comments.map(c => (
-              <div key={c.id} style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: c.status === 'approved' ? '#f0fdf4' : c.status === 'disapproved' ? '#fef2f2' : '#fff' }}>
-                <div>
-                  <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>Review from <strong>{c.user}</strong> on <strong>{c.product}</strong></div>
-                  <div style={{ fontSize: '16px', color: '#111827', fontStyle: 'italic' }}>"{c.text}"</div>
-                  <div style={{ fontSize: '12px', marginTop: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px', color: c.status === 'approved' ? '#166534' : c.status === 'disapproved' ? '#991b1b' : '#d97706' }}>Status: {c.status}</div>
+            {reviews.length === 0 ? (
+              <p style={{ color: '#6b7280', textAlign: 'center', padding: '20px' }}>No new reviews pending approval.</p>
+            ) : (
+              reviews.map(c => (
+                <div key={c._id} style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>Review from <strong>{c.userName}</strong> on <strong>{c.productId?.name || 'Product'}</strong></div>
+                    <div style={{ fontSize: '16px', color: '#111827', fontStyle: 'italic' }}>"{c.comment}"</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={() => handleApprove(c._id)} style={{ padding: '10px 16px', backgroundColor: '#059669', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>Approve</button>
+                    <button onClick={() => handleReject(c._id)} style={{ padding: '10px 16px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>Reject</button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => handleCommentStatus(c.id, 'approved')} disabled={c.status === 'approved'} style={{ padding: '10px 16px', backgroundColor: '#059669', color: '#fff', border: 'none', borderRadius: '6px', cursor: c.status === 'approved' ? 'not-allowed' : 'pointer', opacity: c.status === 'approved' ? 0.5 : 1, fontWeight: '600' }}>Approve</button>
-                  <button onClick={() => handleCommentStatus(c.id, 'disapproved')} disabled={c.status === 'disapproved'} style={{ padding: '10px 16px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: c.status === 'disapproved' ? 'not-allowed' : 'pointer', opacity: c.status === 'disapproved' ? 0.5 : 1, fontWeight: '600' }}>Disapprove</button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
       </div>

@@ -9,7 +9,9 @@ export default function DeliveryTracking({ orders, fetchData }) {
         body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) fetchData(); 
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+    }
   };
 
   return (

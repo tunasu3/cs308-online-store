@@ -16,17 +16,15 @@ export default function MyOrders({ user, setView }) {
         setLoading(false);
       })
       .catch(err => {
-        console.error('Error loading orders:', err);
+        console.error(err);
         setLoading(false);
       });
   }, [user]);
 
-  // Download invoice as PDF
   const downloadInvoice = (orderId) => {
     window.open(`http://localhost:8000/api/orders/${orderId}/invoice`, '_blank');
   };
 
-  // Color-code the order status
   const getStatusColor = (status) => {
     switch (status) {
       case 'Delivered': return { bg: '#d1fae5', text: '#065f46' };
@@ -36,7 +34,6 @@ export default function MyOrders({ user, setView }) {
     }
   };
 
-  // Not logged in
   if (!user) {
     return (
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px', backgroundColor: '#fff', borderRadius: '15px', textAlign: 'center' }}>
@@ -54,7 +51,6 @@ export default function MyOrders({ user, setView }) {
     );
   }
 
-  // Loading
   if (loading) {
     return (
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px', textAlign: 'center' }}>
@@ -98,7 +94,6 @@ export default function MyOrders({ user, setView }) {
                 boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
               }}
             >
-              {/* Order header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px', borderBottom: '1px solid #eee', paddingBottom: '15px' }}>
                 <div>
                   <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>ORDER ID</div>
@@ -125,7 +120,6 @@ export default function MyOrders({ user, setView }) {
                 </span>
               </div>
 
-              {/* Items list */}
               <div style={{ marginBottom: '15px' }}>
                 {order.items && order.items.map((item, idx) => (
                   <div
@@ -151,7 +145,6 @@ export default function MyOrders({ user, setView }) {
                 ))}
               </div>
 
-              {/* Footer with total + actions */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '15px', borderTop: '1px solid #eee' }}>
                 <div>
                   <div style={{ fontSize: '12px', color: '#888' }}>TOTAL</div>
@@ -175,7 +168,6 @@ export default function MyOrders({ user, setView }) {
                 </button>
               </div>
 
-              {/* Delivery address */}
               {order.deliveryAddress && (
                 <div style={{ marginTop: '12px', fontSize: '13px', color: '#666' }}>
                   <strong>Deliver to:</strong> {order.deliveryAddress}
