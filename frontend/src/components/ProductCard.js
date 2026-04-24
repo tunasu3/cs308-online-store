@@ -2,6 +2,10 @@ import React from 'react';
 
 export default function ProductCard({ product, onAddToCart, setView, setSelectedProduct }) {
   const isOutOfStock = product.stock === 0 || !product.stock;
+  
+
+  const rating = product.rating || 0;
+  const fullStars = Math.round(rating);
 
   return (
     <div 
@@ -14,6 +18,18 @@ export default function ProductCard({ product, onAddToCart, setView, setSelected
       <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '15px' }}>
         <img src={product.imageUrl} alt={product.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
       </div>
+      
+      {/* */}
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', gap: '5px' }}>
+        <span style={{ color: '#FFD700', fontSize: '14px', letterSpacing: '2px' }}>
+          {'★'.repeat(fullStars)}
+          <span style={{ color: '#e0e0e0' }}>{'★'.repeat(5 - fullStars)}</span>
+        </span>
+        <span style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>
+          ({rating > 0 ? rating.toFixed(1) : '0'})
+        </span>
+      </div>
+
       <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 5px 0' }}>{product.name}</h3>
       <div style={{ fontSize: '20px', fontWeight: '800', marginBottom: '15px' }}>{product.price} $</div>
       <button 

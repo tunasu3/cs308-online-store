@@ -8,6 +8,9 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
   const [hasPurchased, setHasPurchased] = useState(false);
   const isOutOfStock = product.stock === 0;
 
+  
+  const productRating = product.rating || 0;
+
   useEffect(() => {
     fetch(`http://localhost:8000/api/comments/product/${product._id}`)
       .then(res => res.json())
@@ -71,9 +74,21 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
         <img src={product.imageUrl || 'https://via.placeholder.com/400'} alt={product.name} style={{ width: '400px', height: '400px', objectFit: 'cover', borderRadius: '10px' }} />
         
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '28px', marginBottom: '10px' }}>{product.name}</h2>
+          <h2 style={{ fontSize: '28px', marginBottom: '5px' }}>{product.name}</h2>
+          
+          {/* */}
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px', gap: '8px' }}>
+            <span style={{ color: '#fbbf24', fontSize: '18px' }}>
+              {'★'.repeat(Math.round(productRating))}
+              <span style={{ color: '#d1d5db' }}>{'★'.repeat(5 - Math.round(productRating))}</span>
+            </span>
+            <span style={{ fontSize: '16px', color: '#666', fontWeight: '600' }}>
+              ({productRating > 0 ? productRating.toFixed(1) : '0'})
+            </span>
+          </div>
+
           <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981', marginBottom: '20px' }}>${product.price}</p>
-          <p style={{ color: '#666', lineHeight: '1.6', whiteSpace: 'pre-line' }}>{product.description}</p>
+          <p style={{ color: '#666', lineHeight: '1.6' }}>{product.description}</p>
           
           <div style={{ marginTop: '30px' }}>
             <button 

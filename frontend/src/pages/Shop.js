@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+
 const Stars = ({ value }) => {
   const numValue = Number(value) || 0;
   const full = Math.floor(numValue);
@@ -9,7 +10,9 @@ const Stars = ({ value }) => {
     <div style={{ display: 'flex', gap: '2px', fontSize: '14px' }}>
       {[...Array(5)].map((_, i) => {
         if (i < full) return <span key={i} style={{ color: '#fbbf24' }}>★</span>;
-        if (i === full && half) return <span key={i} style={{ color: '#fbbf24' }}>☆</span>;
+        
+        
+        if (i === full && half) return <span key={i} style={{ color: '#fbbf24' }}>★</span>; 
         return <span key={i} style={{ color: '#e5e7eb' }}>★</span>;
       })}
     </div>
@@ -65,7 +68,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sortBy === 'priceLow') return a.price - b.price;
     if (sortBy === 'priceHigh') return b.price - a.price;
-    if (sortBy === 'popularity') return (b.popularity || 0) - (a.popularity || 0);
+    if (sortBy === 'popularity') return (b.rating || 0) - (a.rating || 0); // Popularity rating'e bağlandı
     return 0;
   });
 
@@ -234,10 +237,11 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                 )}
               </div>
 
+              {/* DİNAMİK YILDIZLAR VE PUAN ALANI BURADA GÜNCELLENDİ */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <Stars value={product.rating || product.averageRating || product.ratings || 0} />
-                <span style={{ fontSize: '13px', color: '#9ca3af' }}>
-                  ({product.reviewCount || product.numReviews || product.reviews?.length || 0})
+                <Stars value={product.rating || 0} />
+                <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: '600' }}>
+                  ({product.rating ? product.rating.toFixed(1) : '0'})
                 </span>
               </div>
 
