@@ -33,17 +33,37 @@ function SalesManager() {
   
   // APPLY DISCOUNT
   const applyDiscount = async () => {
-    try {
-      await axios.put(
-        `http://localhost:8000/api/sales/discount/${selectedProduct}`,
-        { discount: Number(discount) }
-      );
-      alert("Discount applied!");
-    } catch (err) {
-      alert("Error applying discount");
-    }
-  };
+  if (!selectedProduct) {
+    alert("Please select a product");
+    return;
+  }
 
+  if (discount === "") {
+    alert("Please enter a discount");
+    return;
+  }
+
+  const discountValue = Number(discount);
+
+  if (discountValue < 1 || discountValue > 100) {
+    alert("Enter a valid discount (1–100)");
+    return;
+  }
+
+  try {
+    await axios.put(
+      `http://localhost:8000/api/sales/discount/${selectedProduct}`,
+      { discount: discountValue }
+    );
+
+    const res = await axios.get("http://localhost:8000/api/products");
+    setProducts(res.data);
+
+    alert("Discount applied!");
+  } catch (err) {
+    alert("Error applying discount");
+  }
+};
   // GET REVENUE 
   const getRevenue = async () => {
     if (!start || !end) {
@@ -170,7 +190,7 @@ const formatDateLong = (dateStr) => {
           margin: "0 auto",
           background: "#fff",
           padding: "30px",
-          borderRadius: "10px",
+          borderRadius: "12px",
           boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
         }}
       >
@@ -207,20 +227,88 @@ const formatDateLong = (dateStr) => {
             />
 
             <button
-              onClick={applyDiscount}
-              style={{
-                padding: "8px 14px",
-                background: "#2c3e50",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
+            onClick={applyDiscount}
+            disabled={!selectedProduct || !discount}
+            style={{
+              padding: "8px 14px",
+              background: "#2c3e50",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              fontWeight: "500",
+              opacity: (!selectedProduct || !discount) ? 0.6 : 1,
+              cursor: (!selectedProduct || !discount) ? "not-allowed" : "pointer",
               }}
-            >
-              Apply
-            </button>
-          </div>
-        </div>
+              >
+                Apply
+                </button>
+                </div>
+                </div>
+                {/* ================= DISCOUNTED PRODUCTS ================= */}
+                <div style={{ marginTop: "30px" }}>
+                  <h3>Discounted Products</h3>
+                  
+                  {products.filter(p => p.discount > 0).length === 0 ? (
+                    <p style={{ color: "#777" }}>No discounted products</p>
+                  ) : (
+                  <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    marginTop: "10px",
+                  }}
+                  >
+                    <thead>
+                      <tr style={{ textAlign: "left", borderBottom: "2px solid #eee" }}>
+                        <th style={{ padding: "10px" }}>Product</th>
+                        <th style={{ padding: "10px" }}>Discount</th>
+                        <th style={{ padding: "10px" }}>Action</th>
+                        </tr>
+                        </thead>
+                        
+                        <tbody>
+                          {products
+                          .filter(p => p.discount > 0)
+                          .map(p => (
+                          <tr key={p._id} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                            <td style={{ padding: "10px" }}>{p.name}</td>
+                            <td style={{ padding: "10px", color: "#e74c3c", fontWeight: "500" }}>
+                              {p.discount}%
+                              </td>
+                              
+                              <td style={{ padding: "10px" }}>
+                                <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(
+                                      `http://localhost:8000/api/sales/discount/${p._id}`,
+                                      { discount: 0 }
+                                    );
+                                    // refresh products
+                                    const res = await axios.get("http://localhost:8000/api/products");
+                                    setProducts(res.data);
+                                  } catch (err) {
+                                    alert("Error removing discount");
+                                  }
+                                }}
+                                style={{
+                                  padding: "6px 10px",
+                                  background: "#e74c3c",
+                                  color: "#fff",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                }}
+                                >
+                                  Remove
+                                  </button>
+                                  </td>
+                                  </tr>
+                                ))}
+                                </tbody>
+                                </table>
+                              )}
+                              </div>
 
         {/* ================= REVENUE ================= */}
         <div style={{ marginTop: "30px" }}>
