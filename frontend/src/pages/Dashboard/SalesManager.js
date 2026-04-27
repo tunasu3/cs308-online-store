@@ -57,7 +57,14 @@ function SalesManager() {
       );
       
       setTotalRevenue(res.data.totalRevenue);
-      setLabels(res.data.labels);
+      setLabels(
+        res.data.labels.map(date =>
+          new Date(date).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+          })
+        )
+      );
       setData(res.data.data);
     
     } catch (err) {
@@ -73,9 +80,59 @@ function SalesManager() {
       {
         label: "Revenue",
         data: data,
-        tension: 0.3, 
+        borderColor: "#2c3e50",     // dark blue/black
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return null;
+          
+          const gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
+          gradient.addColorStop(0, "rgba(44, 62, 80, 0.7)");
+          gradient.addColorStop(1, "rgba(44, 62, 80, 0.05)");
+          
+          return gradient;
+        },
+
+        tension: 0.4,
+        fill: true,
+
+        pointBackgroundColor: "#2c3e50",
+        pointBorderColor: "#fff",
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      }
+    ]
+  };
+  
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
       },
-    ],
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `$${context.raw.toLocaleString()}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+      },
+      y: {
+        grid: {
+          color: "#e5e7eb",
+        },
+        ticks: {
+          callback: (value) => `$${value.toLocaleString()}`,
+        },
+      },
+    },
   };
   
   const inputStyle = {
@@ -217,16 +274,20 @@ const formatDateLong = (dateStr) => {
           {totalRevenue !== null && (
             <>
               <h3 style={{ marginTop: "20px" }}>
-                Total Revenue: ${totalRevenue.toFixed(2)}
+                Total Revenue: ${totalRevenue.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                  })}
               </h3>
 
               <div
                 style={{
-                  width: "700px",
+                  width: "100%",
+                  maxWidth: "800px",
                   margin: "20px auto",
                 }}
               >
-                <Line data={chartData} />
+                <Line data={chartData} options={options} />
               </div>
             </>
           )}
