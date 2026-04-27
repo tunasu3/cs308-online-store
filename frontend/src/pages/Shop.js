@@ -244,7 +244,18 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                     )}
                   </div>
                   <button
-                    onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const discount = Number(product.discount) || 0;
+                      const finalPrice = discount > 0
+                      ? product.price * (1 - discount / 100)
+                      : product.price;
+                      
+                      addToCart({
+                        ...product,
+                        finalPrice
+                      });
+                    }}
                     disabled={product.stock === 0}
                     style={{
                       padding: '8px 20px',

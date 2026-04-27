@@ -6,7 +6,10 @@ export default function Cart({ cart, setCart, setView, user }) {
   const [paymentStatus, setPaymentStatus] = useState(null); 
   const [invoiceDownloaded, setInvoiceDownloaded] = useState(false);
 
-  const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const total = cart.reduce(
+    (sum, item) => sum + ((item.finalPrice || item.price) * item.qty),
+    0
+  );
   
   const removeItem = (id) => {
     setCart(cart.filter(item => item._id !== id));
@@ -91,7 +94,7 @@ export default function Cart({ cart, setCart, setView, user }) {
     return (
       <div style={{ maxWidth: '600px', margin: '40px auto', padding: '40px', backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
         <h2 style={{ fontSize: '24px', color: '#111827', marginBottom: '8px', fontWeight: '700' }}>Checkout</h2>
-        <div style={{ marginBottom: '32px', fontSize: '16px', color: '#4b5563' }}>Total Amount: <strong style={{ color: '#111827', fontSize: '20px' }}>${total}</strong></div>
+        <div style={{ marginBottom: '32px', fontSize: '16px', color: '#4b5563' }}>Total Amount: <strong style={{ color: '#111827', fontSize: '20px' }}>${total.toFixed(2)}</strong></div>
         
         {paymentStatus === 'fail' && (
           <div style={{ backgroundColor: '#fef2f2', color: '#b91c1c', padding: '14px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center', fontWeight: '500', fontSize: '14px', border: '1px solid #fecaca' }}>
@@ -116,7 +119,7 @@ export default function Cart({ cart, setCart, setView, user }) {
           </div>
 
           <button type="submit" disabled={paymentStatus === 'processing'} style={{ padding: '16px', backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '16px', cursor: paymentStatus === 'processing' ? 'not-allowed' : 'pointer', marginTop: '8px', transition: 'background 0.2s' }}>
-            {paymentStatus === 'processing' ? 'Processing...' : `Pay $${total}`}
+            {paymentStatus === 'processing' ? 'Processing...' : `Pay $${total.toFixed(2)}` }
           </button>
         </form>
         <button onClick={() => setShowCheckout(false)} style={{ width: '100%', background: 'none', border: 'none', marginTop: '20px', cursor: 'pointer', color: '#6b7280', fontWeight: '500' }}>Return to Cart</button>
@@ -144,7 +147,7 @@ export default function Cart({ cart, setCart, setView, user }) {
                   )}
                   <div>
                     <div style={{ fontWeight: '600', color: '#111827', marginBottom: '6px', fontSize: '16px' }}>{item.name}</div>
-                    <div style={{ color: '#6b7280', fontSize: '14px' }}>${item.price} each</div>
+                    <div style={{ color: '#6b7280', fontSize: '14px' }}>${(item.finalPrice || item.price).toFixed(2)} each</div>
                   </div>
                 </div>
 
@@ -168,7 +171,7 @@ export default function Cart({ cart, setCart, setView, user }) {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
                   <span style={{ fontWeight: '700', minWidth: '80px', textAlign: 'right', color: '#111827', fontSize: '18px' }}>
-                    ${item.price * item.qty}
+                    ${((item.finalPrice || item.price) * item.qty).toFixed(2)}
                   </span>
                   <button 
                     onClick={() => removeItem(item._id)}
@@ -183,7 +186,7 @@ export default function Cart({ cart, setCart, setView, user }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginTop: '32px', borderTop: '1px solid #e5e7eb', paddingTop: '32px' }}>
             <div style={{ fontSize: '20px', color: '#4b5563', marginBottom: '24px' }}>
-              Subtotal: <span style={{ fontSize: '28px', fontWeight: '700', color: '#111827', marginLeft: '12px' }}>${total}</span>
+              Subtotal: <span style={{ fontSize: '28px', fontWeight: '700', color: '#111827', marginLeft: '12px' }}>${total.toFixed(2)}</span>
             </div>
 
             {/* YENİ ŞIK UYARI MESAJI VE GİRİŞ YAP BAĞLANTISI */}
