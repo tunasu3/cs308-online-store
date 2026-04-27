@@ -7,9 +7,9 @@ export default function Cart({ cart, setCart, setView, user }) {
   const [invoiceDownloaded, setInvoiceDownloaded] = useState(false);
 
   const total = cart.reduce(
-    (sum, item) => sum + ((item.finalPrice || item.price) * item.qty),
-    0
-  );
+     (sum, item) => sum + ((item.finalPrice !== undefined ? item.finalPrice : item.price) * item.qty),
+     0
+    );
   
   const removeItem = (id) => {
     setCart(cart.filter(item => item._id !== id));
@@ -147,7 +147,7 @@ export default function Cart({ cart, setCart, setView, user }) {
                   )}
                   <div>
                     <div style={{ fontWeight: '600', color: '#111827', marginBottom: '6px', fontSize: '16px' }}>{item.name}</div>
-                    <div style={{ color: '#6b7280', fontSize: '14px' }}>${(item.finalPrice || item.price).toFixed(2)} each</div>
+                    <div style={{ color: '#6b7280', fontSize: '14px' }}>${(item.finalPrice !== undefined ? item.finalPrice : item.price).toFixed(2)} each</div>
                   </div>
                 </div>
 
@@ -171,7 +171,7 @@ export default function Cart({ cart, setCart, setView, user }) {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
                   <span style={{ fontWeight: '700', minWidth: '80px', textAlign: 'right', color: '#111827', fontSize: '18px' }}>
-                    ${((item.finalPrice || item.price) * item.qty).toFixed(2)}
+                    ${((item.finalPrice !== undefined ? item.finalPrice : item.price) * item.qty).toFixed(2)}
                   </span>
                   <button 
                     onClick={() => removeItem(item._id)}

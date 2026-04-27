@@ -50,18 +50,18 @@ function SalesManager() {
       alert("Please select start and end dates");
       return;
     }
-
+    
     try {
       const res = await axios.get(
         `http://localhost:8000/api/sales/revenue?start=${start}&end=${end}`
       );
-
-      //use backend response properly
+      
       setTotalRevenue(res.data.totalRevenue);
       setLabels(res.data.labels);
       setData(res.data.data);
-
+    
     } catch (err) {
+      console.error(err);
       alert("Error fetching revenue");
     }
   };
@@ -77,6 +77,27 @@ function SalesManager() {
       },
     ],
   };
+  
+  const inputStyle = {
+  padding: "8px",             
+  borderRadius: "6px",       
+  border: "1px solid #ccc",    
+  outline: "none",
+  fontSize: "14px",
+  background: "#fff",         
+};
+
+const formatDateLong = (dateStr) => {
+  if (!dateStr) return "";
+
+  const date = new Date(dateStr);
+
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
 
   return (
     <div
@@ -106,7 +127,13 @@ function SalesManager() {
             <select
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
-            >
+            style={{
+              ...inputStyle,
+              appearance: "none",
+              WebkitAppearance: "none",
+              MozAppearance: "none",
+              }}
+              >
               <option value="">Select Product</option>
               {products.map(p => (
                 <option key={p._id} value={p._id}>
@@ -116,10 +143,10 @@ function SalesManager() {
                 </select>
 
             <input
-              style={{ padding: "8px", borderRadius: "4px" }}
-              placeholder="Discount %"
-              value={discount}
-              onChange={(e) => setDiscount(e.target.value)}
+            style={inputStyle}
+            placeholder="Discount %"
+            value={discount}
+            onChange={(e) => setDiscount(e.target.value)}
             />
 
             <button
@@ -143,15 +170,15 @@ function SalesManager() {
           <h3>Revenue</h3>
 
           <input
-            type="date"
-            style={{ marginRight: "10px", padding: "6px" }}
-            onChange={(e) => setStart(e.target.value)}
+          type="date"
+          style={{ ...inputStyle, marginRight: "10px" }}
+          onChange={(e) => setStart(e.target.value)}
           />
-
+          
           <input
-            type="date"
-            style={{ marginRight: "10px", padding: "6px" }}
-            onChange={(e) => setEnd(e.target.value)}
+          type="date"
+          style={{ ...inputStyle, marginRight: "10px" }}
+          onChange={(e) => setEnd(e.target.value)}
           />
 
           <button
@@ -178,11 +205,11 @@ function SalesManager() {
                 borderRadius: "6px",
                 fontSize: "14px",
                 color: "#444",
-                display: "inline-block",
+                display: "block",
+                width: "fit-content"
               }}
             >
-              Showing Revenue from <strong>{start}</strong> to{" "}
-              <strong>{end}</strong>
+              Showing Revenue from <strong>{formatDateLong(start)}</strong> to <strong>{formatDateLong(end)}</strong>
             </div>
           )}
 
@@ -190,7 +217,7 @@ function SalesManager() {
           {totalRevenue !== null && (
             <>
               <h3 style={{ marginTop: "20px" }}>
-                Total Revenue: ${totalRevenue}
+                Total Revenue: ${totalRevenue.toFixed(2)}
               </h3>
 
               <div
