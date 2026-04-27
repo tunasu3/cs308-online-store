@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Line } from "react-chartjs-2";
 import {
@@ -12,8 +12,10 @@ import {
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
 function SalesManager() {
-  const [productId, setProductId] = useState("");
   const [discount, setDiscount] = useState("");
+
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState("");
 
   const [totalRevenue, setTotalRevenue] = useState(null);
   const [labels, setLabels] = useState([]);
@@ -21,14 +23,19 @@ function SalesManager() {
 
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  
+  useEffect(() => {
+    axios.get("http://localhost:8000/api/products")
+    .then(res => setProducts(res.data))
+    .catch(err => console.error(err));
+  }, []);
 
-  // =========================
+  
   // APPLY DISCOUNT
-  // =========================
   const applyDiscount = async () => {
     try {
       await axios.put(
-        `http://localhost:8000/api/sales/discount/${productId}`,
+        `http://localhost:8000/api/sales/discount/${selectedProduct}`,
         { discount: Number(discount) }
       );
       alert("Discount applied!");
@@ -37,9 +44,7 @@ function SalesManager() {
     }
   };
 
-  // =========================
-  // GET REVENUE (REAL DATA)
-  // =========================
+  // GET REVENUE 
   const getRevenue = async () => {
     if (!start || !end) {
       alert("Please select start and end dates");
@@ -51,7 +56,7 @@ function SalesManager() {
         `http://localhost:8000/api/sales/revenue?start=${start}&end=${end}`
       );
 
-      // ✅ IMPORTANT: use backend response properly
+      //use backend response properly
       setTotalRevenue(res.data.totalRevenue);
       setLabels(res.data.labels);
       setData(res.data.data);
@@ -61,16 +66,14 @@ function SalesManager() {
     }
   };
 
-  // =========================
-  // CHART DATA (REAL)
-  // =========================
+  // CHART DATA
   const chartData = {
     labels: labels,
     datasets: [
       {
         label: "Revenue",
         data: data,
-        tension: 0.3, // smoother line (looks nicer)
+        tension: 0.3, 
       },
     ],
   };
@@ -100,12 +103,17 @@ function SalesManager() {
           <h3>Apply Discount</h3>
 
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <input
-              style={{ padding: "8px", borderRadius: "4px" }}
-              placeholder="Product ID"
-              value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-            />
+            <select
+            value={selectedProduct}
+            onChange={(e) => setSelectedProduct(e.target.value)}
+            >
+              <option value="">Select Product</option>
+              {products.map(p => (
+                <option key={p._id} value={p._id}>
+                  {p.name}
+                  </option>
+                ))}
+                </select>
 
             <input
               style={{ padding: "8px", borderRadius: "4px" }}

@@ -163,7 +163,11 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '24px' }}>
           {sortedProducts.map(product => {
-            const finalPrice = product.discount > 0 ? (product.price * (1 - product.discount / 100)).toFixed(2) : product.price;
+            const discount = Number(product.discount) || 0;
+            
+            const finalPrice = discount > 0
+            ? (product.price * (1 - discount / 100)).toFixed(2)
+            : product.price;
             return (
               <div
                 key={product._id}
@@ -209,7 +213,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                   {product.stock === 0 && (
                     <span style={{ position: 'absolute', top: '0', right: '0', background: '#ef4444', color: '#ffffff', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}>SOLD OUT</span>
                   )}
-                  {product.discount > 0 && product.stock !== 0 && (
+                  {(Number(product.discount) || 0) > 0 && product.stock !== 0 && (
                     <span style={{ position: 'absolute', top: '0', left: '0', background: '#ef4444', color: '#ffffff', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>%{product.discount} OFF</span>
                   )}
                 </div>
@@ -230,7 +234,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {product.discount > 0 ? (
+                    {(Number(product.discount) || 0) > 0 ? (
                       <>
                         <span style={{ color: '#9ca3af', textDecoration: 'line-through', fontSize: '13px' }}>${product.price}</span>
                         <span style={{ color: '#111827', fontWeight: '700', fontSize: '18px' }}>${finalPrice}</span>

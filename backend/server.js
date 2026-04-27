@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const connectDB = require('./config/db');
-
+const salesManagerRoutes = require('./routes/salesmanager');
 const app = express();
 
 app.use(cors({
@@ -25,6 +25,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/sales', salesManagerRoutes);
 
 const Order = require('./models/Order');
 const Product = require('./models/Product');
