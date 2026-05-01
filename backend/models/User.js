@@ -9,4 +9,11 @@ const UserSchema = new mongoose.Schema({
     role: { type: String, enum: ['Customer', 'SalesManager', 'ProductManager'], default: 'Customer' }
 }, { timestamps: true });
 
+wishlist: [
+  {
+    type: require("mongoose").Schema.Types.ObjectId,
+    ref: "Product",
+  },
+],
+
 module.exports = mongoose.model('User', UserSchema);

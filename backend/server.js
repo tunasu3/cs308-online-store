@@ -4,6 +4,7 @@ require('dotenv').config();
 const connectDB = require('./config/db');
 const salesManagerRoutes = require('./routes/salesmanager');
 const app = express();
+const wishlistRoutes = require('./routes/wishlist');
 
 app.use(cors({
     origin: ['http://localhost:3000', 'http://localhost:3001'],
@@ -26,6 +27,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/sales', salesManagerRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 const Order = require('./models/Order');
 const Product = require('./models/Product');

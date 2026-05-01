@@ -1,11 +1,28 @@
 import React from 'react';
 
-export default function ProductCard({ product, onAddToCart, setView, setSelectedProduct }) {
+export default function ProductCard({ product, onAddToCart, setView, setSelectedProduct, user }) {
   const isOutOfStock = product.stock === 0 || !product.stock;
   
 
   const rating = product.rating || 0;
   const fullStars = Math.round(rating);
+
+  const addToWishlist = async (productId) => {
+  if (!user) {
+    alert("Please login first");
+    return;
+  }
+
+  try {
+    await fetch(`http://localhost:8000/api/wishlist/${user._id}/${productId}`, {
+      method: "POST"
+    });
+
+    alert("Added to wishlist");
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   return (
     <div 
@@ -32,6 +49,24 @@ export default function ProductCard({ product, onAddToCart, setView, setSelected
 
       <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 5px 0' }}>{product.name}</h3>
       <div style={{ fontSize: '20px', fontWeight: '800', marginBottom: '15px' }}>{product.price} $</div>
+      <button
+      onClick={(e) => {
+        e.stopPropagation(); // prevents opening product page
+        addToWishlist(product._id);
+      }}
+      style={{
+        width: '100%',
+        padding: '10px',
+        marginBottom: '10px',
+        borderRadius: '8px',
+        border: '1px solid #ddd',
+        backgroundColor: '#fff',
+        cursor: 'pointer',
+        fontWeight: '600'
+        }}
+        >
+          ❤️ Add to Wishlist
+          </button>
       <button 
         onClick={(e) => {
           e.stopPropagation();

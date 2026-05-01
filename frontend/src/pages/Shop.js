@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Stars = ({ value }) => {
   const numValue = Number(value) || 0;
@@ -16,11 +16,27 @@ const Stars = ({ value }) => {
   );
 };
 
-export default function Shop({ products, searchTerm, addToCart, setView, setSelectedProduct }) {
+export default function Shop({ products, searchTerm, addToCart, setView, setSelectedProduct, user }) {
   const [sortBy, setSortBy] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 50000 });
+  const [wishlist, setWishlist] = useState([]);
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!user) return;
+      try {
+        const res = await fetch(`http://localhost:8000/api/wishlist/${user._id}`);
+        const data = await res.json();
+        
+        setWishlist(data.map(item => item._id));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    
+    fetchWishlist();
+  }, [user]);
 
   const [open, setOpen] = useState({
     category: true,
@@ -71,6 +87,33 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
     if (sortBy === 'popularity') return (b.rating || 0) - (a.rating || 0);
     return 0;
   });
+  const toggleWishlist = async (productId) => {
+  if (!user) {
+    alert("Please login first");
+    return;
+  }
+
+  try {
+    if (wishlist.includes(productId)) {
+      // REMOVE
+      await fetch(`http://localhost:8000/api/wishlist/${user._id}/${productId}`, {
+        method: "DELETE"
+      });
+
+      setWishlist(prev => prev.filter(id => id !== productId));
+
+    } else {
+      // ADD
+      await fetch(`http://localhost:8000/api/wishlist/${user._id}/${productId}`, {
+        method: "POST"
+      });
+
+      setWishlist(prev => [...prev, productId]);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   return (
     <div style={{ display: 'flex', gap: '30px', marginTop: '20px', alignItems: 'flex-start' }}>
@@ -210,6 +253,29 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                       filter: product.stock === 0 ? 'grayscale(100%)' : 'none'
                     }}
                   />
+                  <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleWishlist(product._id);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'rgba(255,255,255,0.8)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: '16px'
+                    }}
+                    >
+                      {wishlist.includes(product._id) ? '❤️' : '🤍'}
+                      </button>
                   {product.stock === 0 && (
                     <span style={{ position: 'absolute', top: '0', right: '0', background: '#ef4444', color: '#ffffff', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}>SOLD OUT</span>
                   )}
@@ -232,7 +298,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                   {product.name}
                 </h4>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', gap: '10px'  }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {(Number(product.discount) || 0) > 0 ? (
                       <>
@@ -243,6 +309,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                       <span style={{ color: '#111827', fontWeight: '700', fontSize: '20px' }}>${product.price}</span>
                     )}
                   </div>
+                  
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
