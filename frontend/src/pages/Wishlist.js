@@ -153,8 +153,26 @@ useEffect(() => {
                     setSelectedProduct(product);
                     setView('productDetail');
                 }}
-                />
-                
+                /> {flagsState[String(product._id)] && (
+  <div style={{
+    position: 'absolute',
+    bottom: '0',
+    left: '0',
+    width: '100%',
+    background: 'rgba(254, 243, 199, 0.95)',
+    color: '#92400e',
+    fontSize: '12px',
+    padding: '6px 0',
+    textAlign: 'center',
+    fontWeight: '600',
+    borderBottomLeftRadius: '10px',
+borderBottomRightRadius: '10px'
+  }}>
+    {flagsState[String(product._id)] === "new"
+      ? "Now on Sale"
+      : "Price Dropped Further"}
+  </div>
+)}
                 {Number(product.discount) > 0 && (
                     <span style={{
                         position: 'absolute',
@@ -199,22 +217,7 @@ useEffect(() => {
                         </div>
 
               <h4>{product.name}</h4>
-              {flagsState[String(product._id)] && (
-  <div style={{
-    background: "#fef3c7",
-    color: "#92400e",
-    fontSize: "12px",
-    padding: "6px 8px",
-    borderRadius: "6px",
-    marginTop: "6px",
-    textAlign: "center",
-    fontWeight: "500"
-  }}>
-    {flagsState[String(product._id)] === "new"
-      ? "Now on Sale!"
-      : "Price Dropped Further!"}
-  </div>
-)}     
+              
               {Number(product.discount) > 0 ? (
                 <div>
                     <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '13px' }}> ${formatPrice(product.price)} </span>
