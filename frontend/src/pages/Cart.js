@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
 
+const formatPrice = (num) => {
+  const value = Number(num);
+  const rounded = Math.round(value * 100) / 100;
+
+  return rounded % 1 === 0
+    ? rounded.toLocaleString()
+    : rounded.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+};
+
 export default function Cart({ cart, setCart, setView, user }) {
   const [showCheckout, setShowCheckout] = useState(false);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', cardNumber: '', expiry: '', cvv: '' });
@@ -94,7 +106,7 @@ export default function Cart({ cart, setCart, setView, user }) {
     return (
       <div style={{ maxWidth: '600px', margin: '40px auto', padding: '40px', backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
         <h2 style={{ fontSize: '24px', color: '#111827', marginBottom: '8px', fontWeight: '700' }}>Checkout</h2>
-        <div style={{ marginBottom: '32px', fontSize: '16px', color: '#4b5563' }}>Total Amount: <strong style={{ color: '#111827', fontSize: '20px' }}>${total.toFixed(2)}</strong></div>
+        <div style={{ marginBottom: '32px', fontSize: '16px', color: '#4b5563' }}>Total Amount: <strong style={{ color: '#111827', fontSize: '20px' }}>${formatPrice(total)}</strong></div>
         
         {paymentStatus === 'fail' && (
           <div style={{ backgroundColor: '#fef2f2', color: '#b91c1c', padding: '14px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center', fontWeight: '500', fontSize: '14px', border: '1px solid #fecaca' }}>
@@ -119,7 +131,7 @@ export default function Cart({ cart, setCart, setView, user }) {
           </div>
 
           <button type="submit" disabled={paymentStatus === 'processing'} style={{ padding: '16px', backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '16px', cursor: paymentStatus === 'processing' ? 'not-allowed' : 'pointer', marginTop: '8px', transition: 'background 0.2s' }}>
-            {paymentStatus === 'processing' ? 'Processing...' : `Pay $${total.toFixed(2)}` }
+            {paymentStatus === 'processing' ? 'Processing...' : `Pay $${formatPrice(total)}` }
           </button>
         </form>
         <button onClick={() => setShowCheckout(false)} style={{ width: '100%', background: 'none', border: 'none', marginTop: '20px', cursor: 'pointer', color: '#6b7280', fontWeight: '500' }}>Return to Cart</button>
@@ -147,7 +159,7 @@ export default function Cart({ cart, setCart, setView, user }) {
                   )}
                   <div>
                     <div style={{ fontWeight: '600', color: '#111827', marginBottom: '6px', fontSize: '16px' }}>{item.name}</div>
-                    <div style={{ color: '#6b7280', fontSize: '14px' }}>${(item.finalPrice !== undefined ? item.finalPrice : item.price).toFixed(2)} each</div>
+                    <div style={{ color: '#6b7280', fontSize: '14px' }}>${formatPrice(item.finalPrice !== undefined ? item.finalPrice : item.price)} each</div>
                   </div>
                 </div>
 
@@ -171,7 +183,7 @@ export default function Cart({ cart, setCart, setView, user }) {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
                   <span style={{ fontWeight: '700', minWidth: '80px', textAlign: 'right', color: '#111827', fontSize: '18px' }}>
-                    ${((item.finalPrice !== undefined ? item.finalPrice : item.price) * item.qty).toFixed(2)}
+                    ${formatPrice((item.finalPrice !== undefined ? item.finalPrice : item.price) * item.qty)}
                   </span>
                   <button 
                     onClick={() => removeItem(item._id)}
@@ -186,7 +198,7 @@ export default function Cart({ cart, setCart, setView, user }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginTop: '32px', borderTop: '1px solid #e5e7eb', paddingTop: '32px' }}>
             <div style={{ fontSize: '20px', color: '#4b5563', marginBottom: '24px' }}>
-              Subtotal: <span style={{ fontSize: '28px', fontWeight: '700', color: '#111827', marginLeft: '12px' }}>${total.toFixed(2)}</span>
+              Subtotal: <span style={{ fontSize: '28px', fontWeight: '700', color: '#111827', marginLeft: '12px' }}>${formatPrice(total)}</span>
             </div>
 
             {/* YENİ ŞIK UYARI MESAJI VE GİRİŞ YAP BAĞLANTISI */}

@@ -6,14 +6,16 @@ const UserSchema = new mongoose.Schema({
     password: { type: String, required: true },
     taxID: { type: String, default: '' },
     homeAddress: { type: String, default: '' },
-    role: { type: String, enum: ['Customer', 'SalesManager', 'ProductManager'], default: 'Customer' }
-}, { timestamps: true });
+    role: { type: String, enum: ['Customer', 'SalesManager', 'ProductManager'], default: 'Customer' },
 
-wishlist: [
-  {
-    type: require("mongoose").Schema.Types.ObjectId,
-    ref: "Product",
-  },
-],
+    // ✅ ADD IT HERE (inside)
+    wishlist: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+    ]
+
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);

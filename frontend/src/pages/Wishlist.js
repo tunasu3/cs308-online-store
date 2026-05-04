@@ -1,0 +1,252 @@
+import React, { useEffect, useState, useRef } from 'react';
+
+const formatPrice = (num) => {
+  const value = Number(num);
+  const rounded = Math.round(value * 100) / 100;
+
+  return rounded % 1 === 0
+    ? rounded.toLocaleString()
+    : rounded.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+};
+
+export default function Wishlist({ user, addToCart, setView, setSelectedProduct }) {
+  const [items, setItems] = useState([]);
+  const prevItemsRef = useRef([]);
+  const [notification, setNotification] = useState('');
+  const [flagsState, setFlagsState] = useState(
+    JSON.parse(localStorage.getItem("wishlist_flags") || "{}")
+  );
+
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+  if (!user) return;
+  const stored = JSON.parse(localStorage.getItem("wishlist_discounts") || "{}");
+  const flags = JSON.parse(localStorage.getItem("wishlist_flags") || "{}");
+
+  const fetchWishlist = async () => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/wishlist/${user._id}`);
+      const data = await res.json();
+
+     
+
+// detect new or increased discounts
+data.forEach(newItem => {
+  const id = String(newItem._id);
+  const newDiscount = Number(newItem.discount);
+  const oldDiscount = stored[id] ?? newDiscount;
+
+  // 🟢 NEW discount
+  if (oldDiscount === 0 && newDiscount > 0) {
+    flags[id] = "new";
+  }
+
+  // 🔵 INCREASED discount
+  else if (oldDiscount > 0 && newDiscount > oldDiscount) {
+    flags[id] = "increase";
+  }
+
+  // 🔴 REMOVED discount
+  else if (oldDiscount > 0 && newDiscount === 0) {
+    delete flags[id];
+  }
+
+  // 🔴 DISCOUNT DECREASED
+  else if (oldDiscount > newDiscount) {
+    delete flags[id];
+  }
+
+  // update stored
+  stored[id] = newDiscount;
+});
+
+localStorage.setItem("wishlist_discounts", JSON.stringify(stored));
+localStorage.setItem("wishlist_flags", JSON.stringify(flags));
+setFlagsState({ ...flags });
+
+      setItems(data);
+      prevItemsRef.current = data;
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchWishlist(); // initial load
+
+  const interval = setInterval(fetchWishlist, 5000); // 🔥 every 5 sec
+
+  return () => clearInterval(interval);
+
+}, [user]);
+
+useEffect(() => {
+  if (notification) {
+    const timer = setTimeout(() => {
+      setNotification('');
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }
+}, [notification]);
+
+  const removeFromWishlist = async (productId) => {
+    try {
+      await fetch(`http://localhost:8000/api/wishlist/${user._id}/${productId}`, {
+        method: "DELETE"
+      });
+
+      setItems(prev => prev.filter(item => item._id !== productId));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div style={{ padding: '20px' }}>
+      <h2 style={{ marginBottom: '20px' }}>My Wishlist</h2>
+
+      {notification && (
+  <div style={{
+    position: 'fixed',
+    top: '90px',
+    right: '20px',
+    background: '#111827',
+    color: '#fff',
+    padding: '12px 16px',
+    borderRadius: '10px',
+    boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
+    fontSize: '14px',
+    fontWeight: '600',
+    zIndex: 9999,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}>
+    🔔 {notification}
+  </div>
+)}
+
+      {items.length === 0 ? (
+        <p>No items in wishlist.</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
+          {items.map(product => (
+            <div key={product._id} style={{
+              background: '#fff',
+              padding: '15px',
+              borderRadius: '10px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              cursor: 'pointer'
+            }}>
+              
+             <div style={{ position: 'relative' }}>
+                
+                <img 
+                src={product.image || product.imageUrl} 
+                alt={product.name}
+                style={{ width: '100%', height: '150px', objectFit: 'contain' }}
+                onClick={() => {
+                    setSelectedProduct(product);
+                    setView('productDetail');
+                }}
+                />
+                
+                {Number(product.discount) > 0 && (
+                    <span style={{
+                        position: 'absolute',
+                        top: '10px',
+                        left: '10px',
+                        background: '#ef4444',
+                        color: '#fff',
+                        fontSize: '12px',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontWeight: '700'
+                        }}>
+                            %{product.discount} OFF
+                            </span>
+                        )}
+
+                        <button
+                            
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                removeFromWishlist(product._id);
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                                background: 'rgba(255,255,255,0.9)',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '28px',
+                                height: '28px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 'bold'
+                                }}
+                                >
+                                    ✕
+                                    </button>
+
+                        </div>
+
+              <h4>{product.name}</h4>
+              {flagsState[String(product._id)] && (
+  <div style={{
+    background: "#fef3c7",
+    color: "#92400e",
+    fontSize: "12px",
+    padding: "6px 8px",
+    borderRadius: "6px",
+    marginTop: "6px",
+    textAlign: "center",
+    fontWeight: "500"
+  }}>
+    {flagsState[String(product._id)] === "new"
+      ? "Now on Sale!"
+      : "Price Dropped Further!"}
+  </div>
+)}     
+              {Number(product.discount) > 0 ? (
+                <div>
+                    <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '13px' }}> ${formatPrice(product.price)} </span>
+                    <div style={{ fontWeight: '700', fontSize: '18px', color: '#111827' }}> ${formatPrice(product.price * (1 - product.discount / 100))} </div>
+                            </div>
+                            ) : (
+                            <p style={{ fontWeight: '700', fontSize: '18px', color: '#111827' }}> ${formatPrice(product.price)} </p>
+                            )}
+
+                            <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                addToCart(product);
+                            }}
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: '#111',
+                                color: '#fff',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                marginTop: '10px'
+                                }}
+                                >
+                                    Add to Cart
+                                    </button>
+                                    </div>
+                                ))}
+                                </div>
+                            )}
+                            </div>
+                            );
+                        }

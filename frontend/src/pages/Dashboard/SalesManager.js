@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { Line } from "react-chartjs-2";
 import {
@@ -11,10 +11,10 @@ import {
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
-function SalesManager() {
+function SalesManager({ fetchData, products }) {
   const [discount, setDiscount] = useState("");
 
-  const [products, setProducts] = useState([]);
+
   const [selectedProduct, setSelectedProduct] = useState("");
 
   const [totalRevenue, setTotalRevenue] = useState(null);
@@ -24,12 +24,7 @@ function SalesManager() {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   
-  useEffect(() => {
-    axios.get("http://localhost:8000/api/products")
-    .then(res => setProducts(res.data))
-    .catch(err => console.error(err));
-  }, []);
-
+  
   
   // APPLY DISCOUNT
   const applyDiscount = async () => {
@@ -56,8 +51,7 @@ function SalesManager() {
       { discount: discountValue }
     );
 
-    const res = await axios.get("http://localhost:8000/api/products");
-    setProducts(res.data);
+    await fetchData();   
 
     alert("Discount applied!");
   } catch (err) {
@@ -285,8 +279,7 @@ const formatDateLong = (dateStr) => {
                                       { discount: 0 }
                                     );
                                     // refresh products
-                                    const res = await axios.get("http://localhost:8000/api/products");
-                                    setProducts(res.data);
+                                    await fetchData();
                                   } catch (err) {
                                     alert("Error removing discount");
                                   }

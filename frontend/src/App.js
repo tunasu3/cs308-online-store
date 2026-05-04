@@ -7,6 +7,7 @@ import ProductManager from './pages/Dashboard/ProductManager';
 import SalesManager from './pages/Dashboard/SalesManager';
 import Cart from './pages/Cart';
 import MyOrders from './pages/MyOrders';
+import Wishlist from './pages/Wishlist';
 
 export default function App() {
   const [view, setView] = useState('shop');
@@ -120,10 +121,11 @@ export default function App() {
 
       <main style={{ padding: '20px 5%' }}>
         {view === 'shop' && <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} />}
+        {view === 'wishlist' && (<Wishlist user={user} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} />)}
         {view === 'cart' && <Cart cart={cart} setCart={setCart} user={user} setView={setView} />}
         {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} user={user} />}
         {view === 'myOrders' && <MyOrders user={user} setView={setView} />}
-        {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} />)}
+        {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager fetchData={fetchData} products={products} /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} />)}
 
         {(view === 'login' || view === 'register') && (
           <AuthCard 

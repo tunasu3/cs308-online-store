@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
+const formatPrice = (num) => {
+  const value = Number(num);
+
+  return value % 1 === 0
+    ? value.toLocaleString()
+    : value.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+};
+
 const Stars = ({ value }) => {
   const numValue = Number(value) || 0;
   const full = Math.floor(numValue);
@@ -209,7 +220,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
             const discount = Number(product.discount) || 0;
             
             const finalPrice = discount > 0
-            ? (product.price * (1 - discount / 100)).toFixed(2)
+            ? product.price * (1 - discount / 100)
             : product.price;
             return (
               <div
@@ -241,41 +252,54 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
               >
                 <div
                   onClick={() => { setSelectedProduct(product); setView('productDetail'); }}
-                  style={{ position: 'relative', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}
+                  style={{ position: 'relative', height: '180px', marginBottom: '20px' }}
                 >
                   <img
                     src={product.image || product.imageUrl || 'https://via.placeholder.com/200'}
                     alt={product.name}
                     style={{
-                      maxWidth: '100%',
-                      maxHeight: '100%',
+                      width: '100%',
+                      height: '100%',
                       objectFit: 'contain',
                       filter: product.stock === 0 ? 'grayscale(100%)' : 'none'
                     }}
                   />
-                  <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleWishlist(product._id);
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    background: 'rgba(255,255,255,0.8)',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    fontSize: '16px'
-                    }}
-                    >
-                      {wishlist.includes(product._id) ? '❤️' : '🤍'}
-                      </button>
+                  <div
+  onClick={(e) => {
+    e.stopPropagation();
+    toggleWishlist(product._id);
+  }}
+  style={{
+  position: 'absolute',
+  top: '8px',
+  right: '8px',
+  background: 'rgba(255,255,255,0.85)',
+  borderRadius: '50%',
+  width: '32px',
+  height: '32px',
+  minWidth: '32px',
+  minHeight: '32px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  zIndex: 10
+}}
+>
+  <svg
+  width="18"
+  height="18"
+  viewBox="0 0 24 24"
+  fill={wishlist.includes(product._id) ? '#ef4444' : 'none'}
+  stroke={wishlist.includes(product._id) ? '#ef4444' : '#111827'}
+  strokeWidth="2"
+  strokeLinecap="round"
+  strokeLinejoin="round"
+  style={{ display: 'block', transform: 'translateY(1px)' }}  // ✅ merged
+>
+  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+</svg>
+</div>
                   {product.stock === 0 && (
                     <span style={{ position: 'absolute', top: '0', right: '0', background: '#ef4444', color: '#ffffff', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}>SOLD OUT</span>
                   )}
@@ -302,11 +326,11 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {(Number(product.discount) || 0) > 0 ? (
                       <>
-                        <span style={{ color: '#9ca3af', textDecoration: 'line-through', fontSize: '13px' }}>${product.price}</span>
-                        <span style={{ color: '#111827', fontWeight: '700', fontSize: '18px' }}>${finalPrice}</span>
+                        <span style={{ color: '#9ca3af', textDecoration: 'line-through', fontSize: '13px' }}> ${formatPrice(product.price)}</span>
+                        <span style={{ color: '#111827', fontWeight: '700', fontSize: '18px' }}> ${formatPrice(finalPrice)}</span>
                       </>
                     ) : (
-                      <span style={{ color: '#111827', fontWeight: '700', fontSize: '20px' }}>${product.price}</span>
+                     <span style={{ color: '#111827', fontWeight: '700', fontSize: '18px' }}> ${formatPrice(product.price)} </span>
                     )}
                   </div>
                   
