@@ -123,7 +123,7 @@ export default function App() {
         {view === 'shop' && <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} />}
         {view === 'wishlist' && (<Wishlist user={user} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} />)}
         {view === 'cart' && <Cart cart={cart} setCart={setCart} user={user} setView={setView} />}
-        {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} user={user} />}
+        {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} user={user} fetchData={fetchData} />}
         {view === 'myOrders' && <MyOrders user={user} setView={setView} />}
         {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager fetchData={fetchData} products={products} /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} />)}
 

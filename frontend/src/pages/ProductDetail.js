@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function ProductDetail({ product, addToCart, setView, user }) {
+export default function ProductDetail({ product, addToCart, setView, user, fetchData }) {
   const [review, setReview] = useState('');
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -58,6 +58,13 @@ export default function ProductDetail({ product, addToCart, setView, user }) {
       alert('Review submitted! It will appear after approval.');
       setReview('');
       setRating(0);
+
+      // Refresh reviews on this page
+      const refreshed = await fetch(`http://localhost:8000/api/comments/product/${product._id}`);
+      setReviews(await refreshed.json());
+
+      // Refresh products in App.js so any rating changes show on Shop
+      if (fetchData) fetchData();
     } catch (err) {
       console.error(err);
       alert('Something went wrong. Please try again.');

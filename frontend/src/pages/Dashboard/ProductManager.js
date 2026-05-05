@@ -105,6 +105,7 @@ const cancelEdit = () => {
       });
       if (res.ok) {
         setReviews(reviews.filter(r => r._id !== id));
+        if (fetchData) fetchData(); // refresh Shop products with new average rating
       }
     } catch (err) {}
   };
