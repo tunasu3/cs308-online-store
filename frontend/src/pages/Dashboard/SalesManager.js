@@ -7,89 +7,83 @@ import {
   CategoryScale,
   LinearScale,
   PointElement,
+  Tooltip,
+  Legend,
+  Filler,
 } from "chart.js";
 
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
+ChartJS.register(
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 function SalesManager({ fetchData, products }) {
   const [discount, setDiscount] = useState("");
-
-
   const [selectedProduct, setSelectedProduct] = useState("");
-
   const [totalRevenue, setTotalRevenue] = useState(null);
   const [labels, setLabels] = useState([]);
   const [data, setData] = useState([]);
-
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  
-  
-  
-  // APPLY DISCOUNT
+
   const applyDiscount = async () => {
-  if (!selectedProduct) {
-    alert("Please select a product");
-    return;
-  }
-
-  if (discount === "") {
-    alert("Please enter a discount");
-    return;
-  }
-
-  const discountValue = Number(discount);
-
-if (discountValue < 1 || discountValue > 100) {
-  alert("Enter a valid discount (1–100)");
-  return;
-}
-
-const selectedProductData = products.find(p => p._id === selectedProduct);
-if (selectedProductData && selectedProductData.stock === 0) {
-  alert("Cannot apply a discount to a sold out product");
-  return;
-}
-
-  try {
-    await axios.put(
-      `http://localhost:8000/api/sales/discount/${selectedProduct}`,
-      { discount: discountValue }
-    );
-
-    const flags = JSON.parse(localStorage.getItem("wishlist_flags") || "{}");
-    
-    const prevDiscount = Number(products.find(p => p._id === selectedProduct)?.discount || 0);
-    const newDiscountValue = Number(discount);
-    
-    if (newDiscountValue > prevDiscount) {
-      flags[selectedProduct] = prevDiscount > 0 ? "increase" : "new";
-      localStorage.setItem("wishlist_flags", JSON.stringify(flags));
-      localStorage.setItem("wishlist_seen", "false");
+    if (!selectedProduct) {
+      alert("Please select a product");
+      return;
     }
-    
-    await fetchData();
-    
-    alert("Discount applied!");
-  } catch (err) {
-    alert("Error applying discount");
-  }
-};
-  // GET REVENUE 
+    if (discount === "") {
+      alert("Please enter a discount");
+      return;
+    }
+    const discountValue = Number(discount);
+    if (discountValue < 1 || discountValue > 100) {
+      alert("Enter a valid discount (1–100)");
+      return;
+    }
+    const selectedProductData = products.find((p) => p._id === selectedProduct);
+    if (selectedProductData && selectedProductData.stock === 0) {
+      alert("Cannot apply a discount to a sold out product");
+      return;
+    }
+    try {
+      await axios.put(
+        `http://localhost:8000/api/sales/discount/${selectedProduct}`,
+        { discount: discountValue }
+      );
+      const flags = JSON.parse(localStorage.getItem("wishlist_flags") || "{}");
+      const prevDiscount = Number(
+        products.find((p) => p._id === selectedProduct)?.discount || 0
+      );
+      const newDiscountValue = Number(discount);
+      if (newDiscountValue > prevDiscount) {
+        flags[selectedProduct] = prevDiscount > 0 ? "increase" : "new";
+        localStorage.setItem("wishlist_flags", JSON.stringify(flags));
+        localStorage.setItem("wishlist_seen", "false");
+      }
+      await fetchData();
+      alert("Discount applied!");
+    } catch (err) {
+      alert("Error applying discount");
+    }
+  };
+
   const getRevenue = async () => {
     if (!start || !end) {
       alert("Please select start and end dates");
       return;
     }
-    
     try {
       const res = await axios.get(
         `http://localhost:8000/api/sales/revenue?start=${start}&end=${end}`
       );
-      
       setTotalRevenue(res.data.totalRevenue);
       setLabels(
-        res.data.labels.map(date =>
+        res.data.labels.map((date) =>
           new Date(date).toLocaleDateString("en-GB", {
             day: "numeric",
             month: "short",
@@ -97,44 +91,38 @@ if (selectedProductData && selectedProductData.stock === 0) {
         )
       );
       setData(res.data.data);
-    
     } catch (err) {
       console.error(err);
       alert("Error fetching revenue");
     }
   };
 
-  // CHART DATA
   const chartData = {
     labels: labels,
     datasets: [
       {
         label: "Revenue",
         data: data,
-        borderColor: "#2c3e50",     // dark blue/black
+        borderColor: "#2c3e50",
         backgroundColor: (context) => {
           const chart = context.chart;
           const { ctx, chartArea } = chart;
           if (!chartArea) return null;
-          
           const gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
           gradient.addColorStop(0, "rgba(44, 62, 80, 0.7)");
           gradient.addColorStop(1, "rgba(44, 62, 80, 0.05)");
-          
           return gradient;
         },
-
         tension: 0.4,
         fill: true,
-
         pointBackgroundColor: "#2c3e50",
         pointBorderColor: "#fff",
         pointRadius: 5,
         pointHoverRadius: 7,
-      }
-    ]
+      },
+    ],
   };
-  
+
   const options = {
     responsive: true,
     plugins: {
@@ -143,11 +131,11 @@ if (selectedProductData && selectedProductData.stock === 0) {
       },
       tooltip: {
         callbacks: {
-          label: function(context) {
+          label: function (context) {
             return `$${context.raw.toLocaleString()}`;
-          }
-        }
-      }
+          },
+        },
+      },
     },
     scales: {
       x: {
@@ -165,27 +153,25 @@ if (selectedProductData && selectedProductData.stock === 0) {
       },
     },
   };
-  
+
   const inputStyle = {
-  padding: "8px",             
-  borderRadius: "6px",       
-  border: "1px solid #ccc",    
-  outline: "none",
-  fontSize: "14px",
-  background: "#fff",         
-};
+    padding: "8px",
+    borderRadius: "6px",
+    border: "1px solid #ccc",
+    outline: "none",
+    fontSize: "14px",
+    background: "#fff",
+  };
 
-const formatDateLong = (dateStr) => {
-  if (!dateStr) return "";
-
-  const date = new Date(dateStr);
-
-  return date.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
+  const formatDateLong = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
 
   return (
     <div
@@ -206,147 +192,151 @@ const formatDateLong = (dateStr) => {
         }}
       >
         <h2>Sales Manager Dashboard</h2>
-
-        {/* ================= APPLY DISCOUNT ================= */}
         <div style={{ marginBottom: "30px" }}>
           <h3>Apply Discount</h3>
-
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <select
-            value={selectedProduct}
-            onChange={(e) => setSelectedProduct(e.target.value)}
-            style={{
-              ...inputStyle,
-              appearance: "none",
-              WebkitAppearance: "none",
-              MozAppearance: "none",
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              style={{
+                ...inputStyle,
+                appearance: "none",
+                WebkitAppearance: "none",
+                MozAppearance: "none",
               }}
-              >
+            >
               <option value="">Select Product</option>
-              {products.map(p => (
+              {products.map((p) => (
                 <option key={p._id} value={p._id}>
                   {p.name}
-                  </option>
-                ))}
-                </select>
-
+                </option>
+              ))}
+            </select>
             <input
-  style={{ ...inputStyle, width: '120px', MozAppearance: 'textfield' }}
-  placeholder="Discount %"
-  type="number"
-  min="1"
-  max="100"
-  value={discount}
-  onChange={(e) => {
-    const val = e.target.value;
-    if (val === '' || (Number(val) >= 1 && Number(val) <= 100)) {
-      setDiscount(val);
-    }
-  }}
-/>
-
-            <button
-            onClick={applyDiscount}
-            disabled={!selectedProduct || !discount}
-            style={{
-              padding: "8px 14px",
-              background: "#2c3e50",
-              color: "#fff",
-              border: "none",
-              borderRadius: "6px",
-              fontWeight: "500",
-              opacity: (!selectedProduct || !discount) ? 0.6 : 1,
-              cursor: (!selectedProduct || !discount) ? "not-allowed" : "pointer",
+              style={{
+                ...inputStyle,
+                width: "120px",
+                MozAppearance: "textfield",
               }}
-              >
-                Apply
-                </button>
-                </div>
-                </div>
-                {/* ================= DISCOUNTED PRODUCTS ================= */}
-                <div style={{ marginTop: "30px" }}>
-                  <h3>Discounted Products</h3>
-                  
-                  {products.filter(p => p.discount > 0).length === 0 ? (
-                    <p style={{ color: "#777" }}>No discounted products</p>
-                  ) : (
-                  <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    marginTop: "10px",
-                  }}
-                  >
-                    <thead>
-                      <tr style={{ textAlign: "left", borderBottom: "2px solid #eee" }}>
-                        <th style={{ padding: "10px" }}>Product</th>
-                        <th style={{ padding: "10px" }}>Discount</th>
-                        <th style={{ padding: "10px" }}>Action</th>
-                        </tr>
-                        </thead>
-                        
-                        <tbody>
-                          {products
-                          .filter(p => p.discount > 0)
-                          .map(p => (
-                          <tr key={p._id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                            <td style={{ padding: "10px" }}>{p.name}</td>
-                            <td style={{ padding: "10px", color: "#e74c3c", fontWeight: "500" }}>
-                              {p.discount}%
-                              </td>
-                              
-                              <td style={{ padding: "10px" }}>
-                                <button
-                                onClick={async () => {
-                                  try {
-                                    await axios.put(
-                                      `http://localhost:8000/api/sales/discount/${p._id}`,
-                                      { discount: 0 }
-                                    );
-                                    const flags = JSON.parse(localStorage.getItem("wishlist_flags") || "{}"); 
-                                    delete flags[p._id];
-                                    localStorage.setItem("wishlist_flags", JSON.stringify(flags));
-                                    // refresh products
-                                    await fetchData();
-                                  } catch (err) {
-                                    alert("Error removing discount");
-                                  }
-                                }}
-                                style={{
-                                  padding: "6px 10px",
-                                  background: "#e74c3c",
-                                  color: "#fff",
-                                  border: "none",
-                                  borderRadius: "6px",
-                                  cursor: "pointer",
-                                }}
-                                >
-                                  Remove
-                                  </button>
-                                  </td>
-                                  </tr>
-                                ))}
-                                </tbody>
-                                </table>
-                              )}
-                              </div>
-
-        {/* ================= REVENUE ================= */}
+              placeholder="Discount %"
+              type="number"
+              min="1"
+              max="100"
+              value={discount}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === "" || (Number(val) >= 1 && Number(val) <= 100)) {
+                  setDiscount(val);
+                }
+              }}
+            />
+            <button
+              onClick={applyDiscount}
+              disabled={!selectedProduct || !discount}
+              style={{
+                padding: "8px 14px",
+                background: "#2c3e50",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                fontWeight: "500",
+                opacity: !selectedProduct || !discount ? 0.6 : 1,
+                cursor:
+                  !selectedProduct || !discount ? "not-allowed" : "pointer",
+              }}
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+        <div style={{ marginTop: "30px" }}>
+          <h3>Discounted Products</h3>
+          {products.filter((p) => p.discount > 0).length === 0 ? (
+            <p style={{ color: "#777" }}>No discounted products</p>
+          ) : (
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                marginTop: "10px",
+              }}
+            >
+              <thead>
+                <tr style={{ textAlign: "left", borderBottom: "2px solid #eee" }}>
+                  <th style={{ padding: "10px" }}>Product</th>
+                  <th style={{ padding: "10px" }}>Discount</th>
+                  <th style={{ padding: "10px" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products
+                  .filter((p) => p.discount > 0)
+                  .map((p) => (
+                    <tr
+                      key={p._id}
+                      style={{ borderBottom: "1px solid #f0f0f0" }}
+                    >
+                      <td style={{ padding: "10px" }}>{p.name}</td>
+                      <td
+                        style={{
+                          padding: "10px",
+                          color: "#e74c3c",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {p.discount}%
+                      </td>
+                      <td style={{ padding: "10px" }}>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await axios.put(
+                                `http://localhost:8000/api/sales/discount/${p._id}`,
+                                { discount: 0 }
+                              );
+                              const flags = JSON.parse(
+                                localStorage.getItem("wishlist_flags") || "{}"
+                              );
+                              delete flags[p._id];
+                              localStorage.setItem(
+                                "wishlist_flags",
+                                JSON.stringify(flags)
+                              );
+                              await fetchData();
+                            } catch (err) {
+                              alert("Error removing discount");
+                            }
+                          }}
+                          style={{
+                            padding: "6px 10px",
+                            background: "#e74c3c",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          )}
+        </div>
         <div style={{ marginTop: "30px" }}>
           <h3>Revenue</h3>
-
           <input
-          type="date"
-          style={{ ...inputStyle, marginRight: "10px" }}
-          onChange={(e) => setStart(e.target.value)}
+            type="date"
+            style={{ ...inputStyle, marginRight: "10px" }}
+            onChange={(e) => setStart(e.target.value)}
           />
-          
           <input
-          type="date"
-          style={{ ...inputStyle, marginRight: "10px" }}
-          onChange={(e) => setEnd(e.target.value)}
+            type="date"
+            style={{ ...inputStyle, marginRight: "10px" }}
+            onChange={(e) => setEnd(e.target.value)}
           />
-
           <button
             onClick={getRevenue}
             style={{
@@ -360,8 +350,6 @@ const formatDateLong = (dateStr) => {
           >
             Get Revenue
           </button>
-
-          {/* Date display */}
           {start && end && (
             <div
               style={{
@@ -372,23 +360,22 @@ const formatDateLong = (dateStr) => {
                 fontSize: "14px",
                 color: "#444",
                 display: "block",
-                width: "fit-content"
+                width: "fit-content",
               }}
             >
-              Showing Revenue from <strong>{formatDateLong(start)}</strong> to <strong>{formatDateLong(end)}</strong>
+              Showing Revenue from <strong>{formatDateLong(start)}</strong> to{" "}
+              <strong>{formatDateLong(end)}</strong>
             </div>
           )}
-
-          {/* Revenue + Chart */}
           {totalRevenue !== null && (
             <>
               <h3 style={{ marginTop: "20px" }}>
-                Total Revenue: ${totalRevenue.toLocaleString(undefined, {
+                Total Revenue: $
+                {totalRevenue.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
-                  })}
+                })}
               </h3>
-
               <div
                 style={{
                   width: "100%",

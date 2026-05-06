@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function ProductDetail({ product, addToCart, setView, user, fetchData }) {
+export default function ProductDetail({ product, addToCart, setView, user, fetchData, updateWishlistCount }) {
   const [review, setReview] = useState('');
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -42,11 +42,17 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
     }
     try {
       if (isInWishlist) {
-        await fetch(`http://localhost:8000/api/wishlist/${user._id}/${product._id}`, { method: "DELETE" });
-        setIsInWishlist(false);
+        const res = await fetch(`http://localhost:8000/api/wishlist/${user._id}/${product._id}`, { method: "DELETE" });
+        if (res.ok) {
+          setIsInWishlist(false);
+          if (updateWishlistCount) await updateWishlistCount();
+        }
       } else {
-        await fetch(`http://localhost:8000/api/wishlist/${user._id}/${product._id}`, { method: "POST" });
-        setIsInWishlist(true);
+        const res = await fetch(`http://localhost:8000/api/wishlist/${user._id}/${product._id}`, { method: "POST" });
+        if (res.ok) {
+          setIsInWishlist(true);
+          if (updateWishlistCount) await updateWishlistCount();
+        }
       }
     } catch (err) {
       console.error(err);
