@@ -40,10 +40,16 @@ function SalesManager({ fetchData, products }) {
 
   const discountValue = Number(discount);
 
-  if (discountValue < 1 || discountValue > 100) {
-    alert("Enter a valid discount (1–100)");
-    return;
-  }
+if (discountValue < 1 || discountValue > 100) {
+  alert("Enter a valid discount (1–100)");
+  return;
+}
+
+const selectedProductData = products.find(p => p._id === selectedProduct);
+if (selectedProductData && selectedProductData.stock === 0) {
+  alert("Cannot apply a discount to a sold out product");
+  return;
+}
 
   try {
     await axios.put(
