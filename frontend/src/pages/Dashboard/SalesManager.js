@@ -231,11 +231,19 @@ const formatDateLong = (dateStr) => {
                 </select>
 
             <input
-            style={inputStyle}
-            placeholder="Discount %"
-            value={discount}
-            onChange={(e) => setDiscount(e.target.value)}
-            />
+  style={{ ...inputStyle, width: '120px', MozAppearance: 'textfield' }}
+  placeholder="Discount %"
+  type="number"
+  min="1"
+  max="100"
+  value={discount}
+  onChange={(e) => {
+    const val = e.target.value;
+    if (val === '' || (Number(val) >= 1 && Number(val) <= 100)) {
+      setDiscount(val);
+    }
+  }}
+/>
 
             <button
             onClick={applyDiscount}
