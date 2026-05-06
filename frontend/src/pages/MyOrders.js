@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function MyOrders({ user, setView }) {
+export default function MyOrders({ user, setView, products, setSelectedProduct }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,6 +23,16 @@ export default function MyOrders({ user, setView }) {
 
   const downloadInvoice = (orderId) => {
     window.open(`http://localhost:8000/api/orders/${orderId}/invoice`, '_blank');
+  };
+
+   const handleProductClick = (productId) => {
+    const product = products.find(p => p._id === productId);
+    if (product) {
+      setSelectedProduct(product);
+      setView('productDetail');
+    } else {
+      alert('This product is no longer available in the store.');
+    }
   };
 
   const getStatusColor = (status) => {
@@ -133,7 +143,20 @@ export default function MyOrders({ user, setView }) {
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: '600' }}>{item.name}</div>
+                      <div
+                        onClick={() => handleProductClick(item.productId)}
+                        style={{
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          color: '#3b82f6',
+                          textDecoration: 'none',
+                          display: 'inline-block'
+                        }}
+                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                      >
+                        {item.name}
+                      </div>
                       <div style={{ fontSize: '13px', color: '#888' }}>
                         Qty: {item.quantity} × ${item.price}
                       </div>
