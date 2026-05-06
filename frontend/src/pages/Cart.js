@@ -12,15 +12,15 @@ const formatPrice = (num) => {
       });
 };
 
-export default function Cart({ cart, setCart, setView, user }) {
+export default function Cart({ cart, setCart, setView, user, fetchData }) {
   const [showCheckout, setShowCheckout] = useState(false);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', cardNumber: '', expiry: '', cvv: '' });
   const [paymentStatus, setPaymentStatus] = useState(null); 
   const [invoiceDownloaded, setInvoiceDownloaded] = useState(false);
 
   const total = cart.reduce(
-     (sum, item) => sum + ((item.finalPrice !== undefined ? item.finalPrice : item.price) * item.qty),
-     0
+       (sum, item) => sum + ((item.finalPrice !== undefined ? item.finalPrice : item.price) * item.qty),
+       0
     );
   
   const removeItem = (id) => {
@@ -49,9 +49,8 @@ export default function Cart({ cart, setCart, setView, user }) {
 
     setTimeout(async () => {
       if(checkoutData.cardNumber.length === 16 && checkoutData.cvv.length === 3) {
-        setPaymentStatus('success');
         try {
-          await fetch('http://localhost:8000/api/orders', {
+          const res = await fetch('http://localhost:8000/api/orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -68,7 +67,17 @@ export default function Cart({ cart, setCart, setView, user }) {
               deliveryAddress: checkoutData.address
             })
           });
-        } catch (err) { console.error(err); }
+
+          if (res.ok) {
+            setPaymentStatus('success');
+            if (fetchData) fetchData();
+          } else {
+            setPaymentStatus('fail');
+          }
+        } catch (err) { 
+          console.error(err);
+          setPaymentStatus('fail');
+        }
       } else {
         setPaymentStatus('fail');
       }
@@ -110,7 +119,7 @@ export default function Cart({ cart, setCart, setView, user }) {
         
         {paymentStatus === 'fail' && (
           <div style={{ backgroundColor: '#fef2f2', color: '#b91c1c', padding: '14px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center', fontWeight: '500', fontSize: '14px', border: '1px solid #fecaca' }}>
-            Invalid card details. Transaction rejected.
+            Invalid card details or stock error. Transaction rejected.
           </div>
         )}
         
@@ -201,7 +210,6 @@ export default function Cart({ cart, setCart, setView, user }) {
               Subtotal: <span style={{ fontSize: '28px', fontWeight: '700', color: '#111827', marginLeft: '12px' }}>${formatPrice(total)}</span>
             </div>
 
-            {/* YENİ ŞIK UYARI MESAJI VE GİRİŞ YAP BAĞLANTISI */}
             {!user && (
               <div style={{ width: '100%', maxWidth: '400px', padding: '16px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', marginBottom: '20px', color: '#b45309', textAlign: 'center', fontWeight: '500' }}>
                 You must <button onClick={() => setView('login')} style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: '600', padding: '0 4px', cursor: 'pointer', fontSize: '14px', textDecoration: 'underline' }}>Sign In</button> to complete your purchase.
