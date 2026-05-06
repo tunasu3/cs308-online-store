@@ -201,6 +201,22 @@ borderBottomRightRadius: '10px'
                             </span>
                         )}
 
+                        {product.stock === 0 && (
+                          <span style={{
+                            position: 'absolute',
+                            top: '10px',
+                            left: '10px',
+                            background: '#6b7280',
+                            color: '#fff',
+                            fontSize: '12px',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontWeight: '700'
+                            }}>
+                              Sold Out
+                              </span>
+                            )}
+
                         <button
                             
                             onClick={(e) => {
@@ -249,20 +265,21 @@ borderBottomRightRadius: '10px'
                               };
                               addToCart(discountedProduct);
                             }}
+                            disabled={product.stock === 0}
                             style={{
-                                width: '100%',
-                                padding: '12px',
-                                borderRadius: '8px',
-                                border: 'none',
-                                backgroundColor: '#111',
-                                color: '#fff',
-                                fontWeight: '700',
-                                cursor: 'pointer',
-                                marginTop: '10px'
-                                }}
-                                >
-                                    Add to Cart
-                                    </button>
+                              width: '100%',
+                              padding: '12px',
+                              borderRadius: '8px',
+                              border: 'none',
+                              backgroundColor: product.stock === 0 ? '#ccc' : '#111',
+                              color: '#fff',
+                              fontWeight: '700',
+                              cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
+                              marginTop: '10px'
+                              }}
+                              >
+                                {product.stock === 0 ? 'Sold Out' : 'Add to Cart'}
+                                </button>
                                     </div>
                                 ))}
                                 </div>
