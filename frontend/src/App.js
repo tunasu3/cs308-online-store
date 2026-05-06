@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/Navbar';
 import Shop from './pages/Shop';
 import ProductDetail from './pages/ProductDetail';
@@ -19,7 +19,38 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [authData, setAuthData] = useState({ email: '', password: '', fullName: '', taxId: '', address: '' });
-  
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  const updateWishlistCount = useCallback(async () => {
+    if (!user) {
+      setWishlistCount(0);
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:8000/api/wishlist/${user._id}`);
+      const data = await res.json();
+      setWishlistCount(data.length || 0);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [user]);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const pRes = await fetch('http://localhost:8000/api/products');
+      const cRes = await fetch('http://localhost:8000/api/categories');
+      setProducts(await pRes.json());
+      setCategories(await cRes.json());
+      updateWishlistCount();
+    } catch (err) { 
+      console.error(err); 
+    }
+  }, [updateWishlistCount]);
+
+  useEffect(() => { 
+    fetchData(); 
+  }, [fetchData]);
+
   const addToCart = (product) => {
     setCart(prevCart => {
       const existing = prevCart.find(item => item._id === product._id);
@@ -31,21 +62,6 @@ export default function App() {
       return [...prevCart, { ...product, qty: 1 }];
     });
   };
-
-  const fetchData = async () => {
-    try {
-      const pRes = await fetch('http://localhost:8000/api/products');
-      const cRes = await fetch('http://localhost:8000/api/categories');
-      setProducts(await pRes.json());
-      setCategories(await cRes.json());
-    } catch (err) { 
-      console.error(err); 
-    }
-  };
-
-  useEffect(() => { 
-    fetchData(); 
-  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -85,7 +101,8 @@ export default function App() {
         user={user} 
         setSearchTerm={setSearchTerm} 
         setIsCartOpen={() => setView('cart')} 
-        setIsMenuOpen={setIsMenuOpen} 
+        setIsMenuOpen={setIsMenuOpen}
+        wishlistCount={wishlistCount}
       />
 
       {isMenuOpen && (
@@ -108,7 +125,7 @@ export default function App() {
 
             {user && (
               <li onClick={() => { setView('myOrders'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
-                 My Orders
+                  My Orders
               </li>
             )}
 
@@ -120,12 +137,12 @@ export default function App() {
       )}
 
       <main style={{ padding: '20px 5%' }}>
-        {view === 'shop' && <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} />}
-        {view === 'wishlist' && (<Wishlist user={user} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} />)}
+        {view === 'shop' && <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} updateWishlistCount={updateWishlistCount} />}
+        {view === 'wishlist' && (<Wishlist user={user} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} updateWishlistCount={updateWishlistCount} />)}
         {view === 'cart' && <Cart cart={cart} setCart={setCart} user={user} setView={setView} fetchData={fetchData} />}
-        {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} user={user} fetchData={fetchData} />}
+        {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} user={user} fetchData={fetchData} updateWishlistCount={updateWishlistCount} />}
         {view === 'myOrders' && <MyOrders user={user} setView={setView} />}
-        {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager fetchData={fetchData} products={products} /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} />)}
+        {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager fetchData={fetchData} products={products} /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} updateWishlistCount={updateWishlistCount} />)}
 
         {(view === 'login' || view === 'register') && (
           <AuthCard 
