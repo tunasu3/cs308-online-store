@@ -25,6 +25,7 @@ export default function Wishlist({ user, addToCart, setView, setSelectedProduct 
   if (!user) return;
   const stored = JSON.parse(localStorage.getItem("wishlist_discounts") || "{}");
   const flags = JSON.parse(localStorage.getItem("wishlist_flags") || "{}");
+  const stockStored = JSON.parse(localStorage.getItem("wishlist_stock") || "{}");
 
   const fetchWishlist = async () => {
     try {
@@ -34,49 +35,50 @@ export default function Wishlist({ user, addToCart, setView, setSelectedProduct 
      
 
 // detect new or increased discounts
-// detect new or increased discounts
 data.forEach(newItem => {
   const id = String(newItem._id);
   const newDiscount = Number(newItem.discount);
   const oldDiscount = stored[id] !== undefined ? stored[id] : newDiscount;
 
-  if (oldDiscount === newDiscount) return;
-
-  // 🟢 NEW discount
- if (oldDiscount === 0 && newDiscount > 0 && !flags[id]) {
-  flags[id] = "new";
-  if (localStorage.getItem("wishlist_seen") !== "true") {
-    localStorage.setItem("wishlist_seen", "false");
-  }
-}
-
-else if (
-  oldDiscount > 0 &&
-  newDiscount > oldDiscount &&
-  flags[id] !== "increase"
-) {
-  flags[id] = "increase";
-  if (localStorage.getItem("wishlist_seen") !== "true") {
-    localStorage.setItem("wishlist_seen", "false");
-  }
-}
-
-  // 🔴 REMOVED discount
-  else if (oldDiscount > 0 && newDiscount === 0) {
-    delete flags[id];
+  // discount logic only runs if discount changed
+  if (oldDiscount !== newDiscount) {
+    if (oldDiscount === 0 && newDiscount > 0 && !flags[id]) {
+      flags[id] = "new";
+      if (localStorage.getItem("wishlist_seen") !== "true") {
+        localStorage.setItem("wishlist_seen", "false");
+      }
+    } else if (oldDiscount > 0 && newDiscount > oldDiscount && flags[id] !== "increase") {
+      flags[id] = "increase";
+      if (localStorage.getItem("wishlist_seen") !== "true") {
+        localStorage.setItem("wishlist_seen", "false");
+      }
+    } else if (oldDiscount > 0 && newDiscount === 0) {
+      delete flags[id];
+    } else if (oldDiscount > newDiscount) {
+      delete flags[id];
+    }
+    stored[id] = newDiscount;
   }
 
-  // 🔴 DISCOUNT DECREASED
-  else if (oldDiscount > newDiscount) {
-    delete flags[id];
+  // BACK IN STOCK
+  const oldStock = stockStored[id] !== undefined ? stockStored[id] : newItem.stock;
+  const newStock = Number(newItem.stock);
+
+  if (oldStock === 0 && newStock > 0 && !flags[id + "_stock"]) {
+    flags[id + "_stock"] = "back_in_stock";
+    if (localStorage.getItem("wishlist_seen") !== "true") {
+      localStorage.setItem("wishlist_seen", "false");
+    }
+  } else if (newStock === 0) {
+    delete flags[id + "_stock"];
   }
 
-  // update stored
-  stored[id] = newDiscount;
+  stockStored[id] = newStock;
 });
 
 localStorage.setItem("wishlist_discounts", JSON.stringify(stored));
 localStorage.setItem("wishlist_flags", JSON.stringify(flags));
+localStorage.setItem("wishlist_stock", JSON.stringify(stockStored));
 setFlagsState({ ...flags });
 
       setItems(data);
@@ -183,6 +185,25 @@ borderBottomRightRadius: '10px'
     {flagsState[String(product._id)] === "new"
       ? "Now on Sale"
       : "Price Dropped Further"}
+  </div>
+)}
+
+{flagsState[String(product._id) + "_stock"] === "back_in_stock" && (
+  <div style={{
+    position: 'absolute',
+    bottom: '0',
+    left: '0',
+    width: '100%',
+    background: 'rgba(209, 250, 229, 0.95)',
+    color: '#065f46',
+    fontSize: '12px',
+    padding: '6px 0',
+    textAlign: 'center',
+    fontWeight: '600',
+    borderBottomLeftRadius: '10px',
+    borderBottomRightRadius: '10px'
+  }}>
+    Back in Stock
   </div>
 )}
                 {Number(product.discount) > 0 && (

@@ -48,6 +48,12 @@ export default function ProductManager({ products, categories = [], fetchData, d
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newProduct)
     });
+
+    const currentProduct = products.find(p => p._id === editingId);
+    if (editingId && currentProduct && Number(currentProduct.stock) === 0 && Number(newProduct.stock) > 0) {
+      localStorage.setItem("wishlist_seen", "false");
+    }
+    
     fetchData();
     setNewProduct({ name: '', price: '', stock: '', category: '', description: '' });
     setEditingId(null);
