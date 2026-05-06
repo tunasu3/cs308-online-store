@@ -34,20 +34,32 @@ export default function Wishlist({ user, addToCart, setView, setSelectedProduct 
      
 
 // detect new or increased discounts
+// detect new or increased discounts
 data.forEach(newItem => {
   const id = String(newItem._id);
   const newDiscount = Number(newItem.discount);
-  const oldDiscount = stored[id] ?? newDiscount;
+  const oldDiscount = stored[id] !== undefined ? stored[id] : newDiscount;
+
+  if (oldDiscount === newDiscount) return;
 
   // 🟢 NEW discount
-  if (oldDiscount === 0 && newDiscount > 0) {
-    flags[id] = "new";
+ if (oldDiscount === 0 && newDiscount > 0 && !flags[id]) {
+  flags[id] = "new";
+  if (localStorage.getItem("wishlist_seen") !== "true") {
+    localStorage.setItem("wishlist_seen", "false");
   }
+}
 
-  // 🔵 INCREASED discount
-  else if (oldDiscount > 0 && newDiscount > oldDiscount) {
-    flags[id] = "increase";
+else if (
+  oldDiscount > 0 &&
+  newDiscount > oldDiscount &&
+  flags[id] !== "increase"
+) {
+  flags[id] = "increase";
+  if (localStorage.getItem("wishlist_seen") !== "true") {
+    localStorage.setItem("wishlist_seen", "false");
   }
+}
 
   // 🔴 REMOVED discount
   else if (oldDiscount > 0 && newDiscount === 0) {
@@ -228,9 +240,14 @@ borderBottomRightRadius: '10px'
                             )}
 
                             <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                addToCart(product);
+                            onClick={(e) => { e.stopPropagation(); 
+                              const discountedProduct = {
+                                ...product,
+                                price: Number(product.discount) > 0
+                                ? product.price * (1 - product.discount / 100)
+                                : product.price
+                              };
+                              addToCart(discountedProduct);
                             }}
                             style={{
                                 width: '100%',

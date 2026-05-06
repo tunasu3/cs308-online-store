@@ -2,8 +2,20 @@ import React from 'react';
 
 export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOpen, setIsMenuOpen }) {
   const totalItems = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+  const [hasWishlistNotification, setHasWishlistNotification] = React.useState(false);
 
-  
+  React.useEffect(() => {
+  const checkWishlist = () => {
+  const seen = localStorage.getItem("wishlist_seen") === "true";
+  setHasWishlistNotification(!seen);
+};
+
+  checkWishlist();
+
+  const interval = setInterval(checkWishlist, 1000); // fast for demo
+  return () => clearInterval(interval);
+}, []);
+
   const getFirstName = () => {
     if (!user) return 'Sign In';
     if (user.fullName) return user.fullName.split(' ')[0];
@@ -45,7 +57,7 @@ export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOp
         </div>
 
         {/* Wishlist */}
-        <div onClick={() => setView('wishlist')}
+        <div onClick={() => { setView('wishlist'); localStorage.setItem("wishlist_seen", "true"); setHasWishlistNotification(false); }}
         style={{ 
           cursor: 'pointer', 
           display: 'flex', 
@@ -65,6 +77,20 @@ export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOp
 >
   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
 </svg>
+{hasWishlistNotification && (
+  <span
+    style={{
+      position: 'absolute',
+      top: '-4px',
+      right: '-4px',
+      height: '12px',
+      width: '12px',
+      backgroundColor: '#ef4444',
+      borderRadius: '50%',
+      border: '2px solid white'
+    }}
+  />
+)}
               </div>
 
         {/*  */}

@@ -51,8 +51,19 @@ function SalesManager({ fetchData, products }) {
       { discount: discountValue }
     );
 
-    await fetchData();   
-
+    const flags = JSON.parse(localStorage.getItem("wishlist_flags") || "{}");
+    
+    const prevDiscount = Number(products.find(p => p._id === selectedProduct)?.discount || 0);
+    const newDiscountValue = Number(discount);
+    
+    if (newDiscountValue > prevDiscount) {
+      flags[selectedProduct] = prevDiscount > 0 ? "increase" : "new";
+      localStorage.setItem("wishlist_flags", JSON.stringify(flags));
+      localStorage.setItem("wishlist_seen", "false");
+    }
+    
+    await fetchData();
+    
     alert("Discount applied!");
   } catch (err) {
     alert("Error applying discount");
@@ -278,6 +289,9 @@ const formatDateLong = (dateStr) => {
                                       `http://localhost:8000/api/sales/discount/${p._id}`,
                                       { discount: 0 }
                                     );
+                                    const flags = JSON.parse(localStorage.getItem("wishlist_flags") || "{}"); 
+                                    delete flags[p._id];
+                                    localStorage.setItem("wishlist_flags", JSON.stringify(flags));
                                     // refresh products
                                     await fetchData();
                                   } catch (err) {
