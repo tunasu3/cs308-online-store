@@ -6,6 +6,7 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
   const [hoverRating, setHoverRating] = useState(0);
   const [reviews, setReviews] = useState([]);
   const [hasPurchased, setHasPurchased] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
   const isOutOfStock = product.stock === 0;
 
   const productRating = product.rating || 0;
@@ -24,8 +25,33 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
         .then(res => res.json())
         .then(data => setHasPurchased(data.hasPurchased))
         .catch(err => console.error(err));
+
+      fetch(`http://localhost:8000/api/wishlist/${user._id}`)
+        .then(res => res.json())
+        .then(data => {
+          setIsInWishlist(data.some(item => item._id === product._id));
+        })
+        .catch(err => console.error(err));
     }
   }, [product._id, user]);
+
+  const toggleWishlist = async () => {
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+    try {
+      if (isInWishlist) {
+        await fetch(`http://localhost:8000/api/wishlist/${user._id}/${product._id}`, { method: "DELETE" });
+        setIsInWishlist(false);
+      } else {
+        await fetch(`http://localhost:8000/api/wishlist/${user._id}/${product._id}`, { method: "POST" });
+        setIsInWishlist(true);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleAddReview = async (e) => {
     e.preventDefault();
@@ -58,12 +84,8 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
       alert('Review submitted! It will appear after approval.');
       setReview('');
       setRating(0);
-
-      // Refresh reviews on this page
       const refreshed = await fetch(`http://localhost:8000/api/comments/product/${product._id}`);
       setReviews(await refreshed.json());
-
-      // Refresh products in App.js so any rating changes show on Shop
       if (fetchData) fetchData();
     } catch (err) {
       console.error(err);
@@ -76,7 +98,31 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
       <button onClick={() => setView('shop')} style={{ marginBottom: '20px', cursor: 'pointer', background: 'none', border: 'none', color: '#3b82f6' }}>← Go Back</button>
       
       <div style={{ display: 'flex', gap: '30px' }}>
-        <img src={product.image || product.imageUrl || 'https://via.placeholder.com/400'} alt={product.name} style={{ width: '400px', height: '400px', objectFit: 'cover', borderRadius: '10px' }} />
+        <div style={{ position: 'relative' }}>
+          <img src={product.image || product.imageUrl || 'https://via.placeholder.com/400'} alt={product.name} style={{ width: '400px', height: '400px', objectFit: 'cover', borderRadius: '10px' }} />
+          <div
+            onClick={toggleWishlist}
+            style={{
+              position: 'absolute',
+              top: '15px',
+              right: '15px',
+              width: '40px',
+              height: '40px',
+              backgroundColor: '#fff',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+              cursor: 'pointer',
+              zIndex: 10
+            }}
+          >
+            <span style={{ color: isInWishlist ? '#ef4444' : '#d1d5db', fontSize: '22px' }}>
+              {isInWishlist ? '❤️' : '♡'}
+            </span>
+          </div>
+        </div>
         
         <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: '28px', marginBottom: '5px' }}>{product.name}</h2>
@@ -189,7 +235,7 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
                   {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}
                 </span>
               </div>
-              <div style={{ color: '#444' }}>{r.comment}</div>
+              <p style={{ margin: 0, color: '#4b5563' }}>{r.comment}</p>
             </div>
           ))
         )}
