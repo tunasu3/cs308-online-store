@@ -19,9 +19,9 @@ router.post('/', async (req, res) => {
         }
 
         const order = new Order({ user: userId, userName, userEmail, items, totalPrice, deliveryAddress });
-        await order.save();
+        const savedOrder = await order.save();
 
-        res.status(201).json({ message: 'Order placed!', order });
+        res.status(201).json({ message: 'Order placed!', id: savedOrder.id });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
