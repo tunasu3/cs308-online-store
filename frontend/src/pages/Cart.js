@@ -16,7 +16,8 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
   const [showCheckout, setShowCheckout] = useState(false);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', cardNumber: '', expiry: '', cvv: '' });
   const [paymentStatus, setPaymentStatus] = useState(null); 
-  const [invoiceDownloaded, setInvoiceDownloaded] = useState(false);
+  const [invoiceSending, setInvoiceSending] = useState(false);
+  const [invoiceId, setInvoiceId] = useState(null);
 
   const total = cart.reduce(
        (sum, item) => sum + ((item.finalPrice !== undefined ? item.finalPrice : item.price) * item.qty),
@@ -70,6 +71,8 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
 
           if (res.ok) {
             setPaymentStatus('success');
+            const data = await res.json();
+            setInvoiceId(data.id);
             if (fetchData) fetchData();
           } else {
             setPaymentStatus('fail');
@@ -84,13 +87,22 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
     }, 2000);
   };
 
-  const handleFinishShopping = () => {
-    setInvoiceDownloaded(true);
-    setTimeout(() => {
-      setCart([]);
-      setShowCheckout(false);
-      setView('shop');
-    }, 1500);
+  const handleFinishShopping = async () => {
+    setInvoiceSending(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/orders/mail-invoice/${invoiceId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+    } catch(err) {
+      console.error(err);
+    }
+
+    setCart([]);
+    setShowCheckout(false);
+    setView('shop');
+    setInvoiceSending(false);
   };
 
   if (showCheckout) {
@@ -101,11 +113,11 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
           <h2 style={{ color: '#10b981', fontSize: '24px', marginBottom: '12px', fontWeight: '700' }}>Payment Successful!</h2>
           <p style={{ color: '#4b5563', fontSize: '15px', marginBottom: '32px' }}>Your order has been confirmed and is being processed.</p>
           
-          {invoiceDownloaded ? (
-             <div style={{ color: '#4f46e5', fontWeight: '600', padding: '12px', backgroundColor: '#e0e7ff', borderRadius: '8px' }}>Invoice downloaded! Redirecting...</div>
+          {invoiceSending ? (
+             <div style={{ color: '#4f46e5', fontWeight: '600', padding: '12px', backgroundColor: '#e0e7ff', borderRadius: '8px' }}>Sending invoice email...</div>
           ) : (
             <button onClick={handleFinishShopping} style={{ width: '100%', padding: '14px 24px', backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '15px' }}>
-              Download Invoice & Return
+              Send Invoice Email
             </button>
           )}
         </div>
