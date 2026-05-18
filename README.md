@@ -118,11 +118,11 @@ Sprint 3: Core Features (Preparation for Progress Demo)
 
 [x] Task 11: Develop Shopping Cart (Add/Remove/Update quantity).
 
-[ ] Task 12: Build Checkout page with Mock Payment integration.
+[x] Task 12: Build Checkout page with Mock Payment integration.
 
-[ ] Task 13: Automated PDF Invoice generation after purchase.
+[x] Task 13: Automated PDF Invoice generation after purchase.
 
-[ ] Task 14: Admin Dashboard for initial data entry.
+[x] Task 14: Admin Dashboard for initial data entry.
 
 
 Sprint 4: Managerial Features & Advanced Logic
@@ -131,26 +131,26 @@ Sprint 4: Managerial Features & Advanced Logic
 
 [x] Task 16: Product Manager: Comment moderation (Approve/Reject customer reviews).
 
-[ ] Task 17: Sales Manager: Dynamic pricing tool (Update prices/Set discounts).
+[x] Task 17: Sales Manager: Dynamic pricing tool (Update prices/Set discounts).
 
-[ ] Task 18: Sales Manager: Delivery tracking and Order Status updates.
+[x] Task 18: Sales Manager: Delivery tracking and Order Status updates.
 
-[ ] Task 19: Wishlist system & Notification for price drops.
+[x] Task 19: Wishlist system & Notification for price drops.
 
 [ ] Task 20: Implement "Revenue vs. Loss" charts for Sales Managers.
 
-[ ] Task 21: Integrate E-mail simulation for order confirmation.
+[x] Task 21: Integrate E-mail simulation for order confirmation.
 
 
 Sprint 5: Returns, Reviews & Quality Assurance
 ------------
 [ ] Task 22: Return System: 30-day refund logic with automatic stock restock.
 
-[ ] Task 23: Customer Rating system (Star ratings and text reviews).
+[x] Task 23: Customer Rating system (Star ratings and text reviews).
 
-[ ] Task 24: Implementation of at least 25 Unit Test Cases.
+[x] Task 24: Implementation of at least 25 Unit Test Cases.
 
-[ ] Task 25: Security audit.
+[x] Task 25: Security audit.
 
 [ ] Task 26: Final Bug fixing and UI/UX polishing before Final Demo.
 
