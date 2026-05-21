@@ -29,6 +29,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
   const [sortBy, setSortBy] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [onSaleOnly, setOnSaleOnly] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 50000 });
   const [wishlist, setWishlist] = useState([]);
 
@@ -49,6 +50,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
   const [open, setOpen] = useState({
     category: true,
     stock: true,
+    sale: true,
     price: true
   });
 
@@ -77,9 +79,10 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
       selectedCategories.length === 0 ||
       selectedCategories.includes(p.category);
     const matchesStock = inStockOnly ? p.stock > 0 : true;
+    const matchesSale = onSaleOnly ? (Number(p.discount) || 0) > 0 : true;
     const currentPrice = p.discount > 0 ? p.price * (1 - p.discount / 100) : p.price;
     const matchesPrice = currentPrice >= priceRange.min && currentPrice <= priceRange.max;
-    return matchesSearch && matchesCategory && matchesStock && matchesPrice;
+    return matchesSearch && matchesCategory && matchesStock && matchesSale && matchesPrice;
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -132,11 +135,12 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: 0 }}>Filters</h3>
-          {(selectedCategories.length > 0 || inStockOnly || priceRange.max < 50000) && (
+          {(selectedCategories.length > 0 || inStockOnly || onSaleOnly || priceRange.max < 50000) && (
             <button 
               onClick={() => {
                 setSelectedCategories([]);
                 setInStockOnly(false);
+                setOnSaleOnly(false);
                 setPriceRange({ min: 0, max: 50000 });
               }}
               style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '13px', fontWeight: '600', cursor: 'pointer', padding: 0 }}
@@ -177,6 +181,23 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                 type="checkbox"
                 checked={inStockOnly}
                 onChange={(e) => setInStockOnly(e.target.checked)}
+                style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
+              />
+            </label>
+          )}
+        </div>
+        <div style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #f3f4f6' }}>
+          <div onClick={() => toggle('sale')} style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '16px' }}>
+            <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SALE</span>
+            <span style={{ color: '#6b7280' }}>{open.sale ? '-' : '+'}</span>
+          </div>
+          {open.sale && (
+            <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#374151', cursor: 'pointer', alignItems: 'center' }}>
+              On Sale Only
+              <input
+                type="checkbox"
+                checked={onSaleOnly}
+                onChange={(e) => setOnSaleOnly(e.target.checked)}
                 style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
               />
             </label>
@@ -293,7 +314,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                     <span style={{ position: 'absolute', top: '0', right: '0', background: '#9ca3af', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>SOLD OUT</span>
                   )}
                   {discount > 0 && product.stock !== 0 && (
-                    <span style={{ position: 'absolute', top: '0', left: '0', background: '#981111', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>%{product.discount} OFF</span>
+                    <span style={{ position: 'absolute', top: '0', left: '0', background: '#f33131', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>%{product.discount} OFF</span>
                   )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
