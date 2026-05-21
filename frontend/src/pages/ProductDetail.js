@@ -87,7 +87,7 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
         alert(data.error || 'Could not submit review.');
         return;
       }
-      alert('Review submitted! It will appear after approval.');
+      alert('Thanks! Your star rating has been posted. Your written review will appear after a manager approves it.');
       setReview('');
       setRating(0);
       const refreshed = await fetch(`http://localhost:8000/api/comments/product/${product._id}`);
