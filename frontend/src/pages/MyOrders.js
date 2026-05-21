@@ -3,13 +3,26 @@ import React, { useState, useEffect } from 'react';
 export default function MyOrders({ user, setView, products, setSelectedProduct }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
-  useEffect(() => {
+  
+  const fetchOrders = () => {
     if (!user) {
       setLoading(false);
       return;
     }
-    fetch(`http://localhost:8000/api/orders/user/${user._id}`)
+    setLoading(true);
+
+   
+    let url = `http://localhost:8000/api/orders/user/${user._id}`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+
+    fetch(url)
       .then(res => res.json())
       .then(data => {
         setOrders(data);
@@ -19,13 +32,24 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
         console.error(err);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchOrders();
   }, [user]);
 
   const downloadInvoice = (orderId) => {
     window.open(`http://localhost:8000/api/orders/${orderId}/invoice`, '_blank');
   };
-
-   const handleProductClick = (productId) => {
+  const downloadAllInvoices = () => {
+      let url = `http://localhost:8000/api/orders/user/${user._id}/invoices/download`;
+    
+      if (startDate && endDate) {
+        url += `?startDate=${startDate}&endDate=${endDate}`;
+      }
+      window.open(url, '_blank');
+    };
+  const handleProductClick = (productId) => {
     const product = products.find(p => p._id === productId);
     if (product) {
       setSelectedProduct(product);
@@ -78,11 +102,43 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
         ← Back to Shop
       </button>
 
-      <h1 style={{ marginBottom: '25px' }}>My Orders</h1>
+      <h1 style={{ marginBottom: '10px' }}>My Orders</h1>
+
+      {}
+      <div style={{ display: 'flex', gap: '15px', marginBottom: '25px', alignItems: 'center', backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
+        <label style={{ fontSize: '14px', color: '#4b5563' }}>
+          From: <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ padding: '6px', borderRadius: '6px', border: '1px solid #d1d5db', marginLeft: '5px' }} />
+        </label>
+        <label style={{ fontSize: '14px', color: '#4b5563' }}>
+          To: <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ padding: '6px', borderRadius: '6px', border: '1px solid #d1d5db', marginLeft: '5px' }} />
+        </label>
+        <button 
+          onClick={fetchOrders} 
+          style={{ padding: '8px 16px', backgroundColor: '#111', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}
+        >
+          Filter Invoices
+        </button>
+        {}
+        <button 
+          onClick={downloadAllInvoices} 
+          style={{ padding: '8px 16px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}
+        >
+          Download All Invoices (PDF)
+        </button>
+
+        {(startDate || endDate) && (
+          <button 
+            onClick={() => { setStartDate(''); setEndDate(''); setTimeout(fetchOrders, 0); }} 
+            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px' }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
 
       {orders.length === 0 ? (
         <div style={{ padding: '40px', backgroundColor: '#fff', borderRadius: '15px', textAlign: 'center' }}>
-          <p style={{ color: '#666', fontSize: '16px' }}>You haven't placed any orders yet.</p>
+          <p style={{ color: '#666', fontSize: '16px' }}>No orders found for this criteria.</p>
           <button
             onClick={() => setView('shop')}
             style={{ marginTop: '15px', padding: '12px 24px', backgroundColor: '#111', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
@@ -172,7 +228,7 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                 <div>
                   <div style={{ fontSize: '12px', color: '#888' }}>TOTAL</div>
                   <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#10b981' }}>
-                    ${order.totalPrice?.toLocaleString()}
+                    ${order.totalPrice?.toLocaleString()} 
                   </div>
                 </div>
                 <button
