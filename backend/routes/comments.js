@@ -24,7 +24,18 @@ router.post('/', async (req, res) => {
 
         const newComment = new Comment({ productId, userId, userName, rating, comment });
         await newComment.save();
-        res.status(201).json({ message: 'Comment submitted! Waiting for approval.', comment: newComment });
+
+        // ✅ Recalculate product rating immediately using ALL ratings (approved or not)
+        const allComments = await Comment.find({ productId });
+        const totalRating = allComments.reduce((sum, c) => sum + c.rating, 0);
+        const averageRating = allComments.length > 0 ? (totalRating / allComments.length) : 0;
+
+        await Product.findByIdAndUpdate(productId, { rating: averageRating });
+
+        res.status(201).json({ 
+            message: 'Rating posted! Your comment is waiting for approval.', 
+            comment: newComment 
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -61,21 +72,6 @@ router.put('/:id/approve', async (req, res) => {
 
         if (!comment) return res.status(404).json({ error: 'Comment not found' });
 
-        const allApprovedComments = await Comment.find({
-            productId: comment.productId,
-            approved: true
-        });
-
-        let totalRating = 0;
-        allApprovedComments.forEach(c => totalRating += c.rating);
-        
-        const averageRating = allApprovedComments.length > 0 ? (totalRating / allApprovedComments.length) : 0;
-
-        await Product.findByIdAndUpdate(
-            comment.productId,
-            { rating: averageRating }
-        );
-
         res.json({ message: 'Comment approved!', comment });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -86,16 +82,10 @@ router.delete('/:id', async (req, res) => {
     try {
         const comment = await Comment.findByIdAndDelete(req.params.id);
         
-        if (comment && comment.approved) {
-            const allApprovedComments = await Comment.find({
-                productId: comment.productId,
-                approved: true
-            });
-
-            let totalRating = 0;
-            allApprovedComments.forEach(c => totalRating += c.rating);
-            
-            const averageRating = allApprovedComments.length > 0 ? (totalRating / allApprovedComments.length) : 0;
+        if (comment) {
+            const allComments = await Comment.find({ productId: comment.productId });
+            const totalRating = allComments.reduce((sum, c) => sum + c.rating, 0);
+            const averageRating = allComments.length > 0 ? (totalRating / allComments.length) : 0;
 
             await Product.findByIdAndUpdate(
                 comment.productId,
