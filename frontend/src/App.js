@@ -83,6 +83,34 @@ export default function App() {
     }
   };
 
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('http://localhost:8000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: authData.fullName,
+          email: authData.email,
+          password: authData.password,
+          taxID: authData.taxId,
+          homeAddress: authData.address
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUser(data.user);
+        setView('shop');
+        alert('Registration successful! You are now logged in.');
+      } else {
+        alert(data.message || 'Registration failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error. Is the backend running?');
+    }
+  };
+
   const deleteProduct = async (id) => {
     if(!window.confirm("Are you sure?")) return;
     try {
@@ -156,7 +184,8 @@ export default function App() {
           <AuthCard 
             view={view} 
             setView={setView} 
-            handleLogin={handleLogin} 
+            handleLogin={handleLogin}
+            handleRegister={handleRegister} 
             authData={authData} 
             setAuthData={setAuthData} 
           />

@@ -1,6 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+console.log('MONGO_URI loaded:', process.env.MONGO_URI ? 'YES' : 'NO');
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err.message);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err?.message || err);
+});
 const connectDB = require('./config/db');
 const salesManagerRoutes = require('./routes/salesmanager');
 const app = express();
