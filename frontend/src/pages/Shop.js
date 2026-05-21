@@ -130,7 +130,21 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
         padding: '24px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
       }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '24px', color: '#111827' }}>Filters</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: 0 }}>Filters</h3>
+          {(selectedCategories.length > 0 || inStockOnly || priceRange.max < 50000) && (
+            <button 
+              onClick={() => {
+                setSelectedCategories([]);
+                setInStockOnly(false);
+                setPriceRange({ min: 0, max: 50000 });
+              }}
+              style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '13px', fontWeight: '600', cursor: 'pointer', padding: 0 }}
+            >
+              Clear All
+            </button>
+          )}
+        </div>
         <div style={{ marginBottom: '24px' }}>
           <div onClick={() => toggle('category')} style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '16px' }}>
             <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>CATEGORIES</span>
@@ -216,7 +230,8 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                   borderRadius: '12px',
                   padding: '20px',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  border: '1px solid #e5e7eb',
+                  transition: 'all 0.2s ease-in-out',
                   cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
                   position: 'relative',
                   display: 'flex',
@@ -226,13 +241,17 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                 onMouseEnter={(e) => {
                   if (product.stock !== 0) {
                     e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)';
+                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(59, 130, 246, 0.15)';
+                    e.currentTarget.style.backgroundColor = '#f0f7ff';
+                    e.currentTarget.style.borderColor = '#153870';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (product.stock !== 0) {
                     e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.borderColor = '#e5e7eb';
                   }
                 }}
               >
@@ -271,10 +290,10 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                     </svg>
                   </div>
                   {product.stock === 0 && (
-                    <span style={{ position: 'absolute', top: '0', right: '0', background: '#ef4444', color: '#ffffff', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}>SOLD OUT</span>
+                    <span style={{ position: 'absolute', top: '0', right: '0', background: '#9ca3af', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>SOLD OUT</span>
                   )}
                   {discount > 0 && product.stock !== 0 && (
-                    <span style={{ position: 'absolute', top: '0', left: '0', background: '#ef4444', color: '#ffffff', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>%{product.discount} OFF</span>
+                    <span style={{ position: 'absolute', top: '0', left: '0', background: '#981111', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>%{product.discount} OFF</span>
                   )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -283,13 +302,13 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                     ({product.rating ? product.rating.toFixed(1) : '0'})
                   </span>
                 </div>
-                <h4 style={{ color: '#111827', fontSize: '15px', fontWeight: '500', marginBottom: '20px', lineHeight: '1.4' }}>{product.name}</h4>
+                <h4 style={{ color: '#111827', fontSize: '15px', fontWeight: '500', marginBottom: '20px', lineHeight: '1.4', height: '42px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.name}</h4>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', gap: '10px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {discount > 0 ? (
                       <>
                         <span style={{ color: '#9ca3af', textDecoration: 'line-through', fontSize: '13px' }}> ${formatPrice(product.price)}</span>
-                        <span style={{ color: '#111827', fontWeight: '700', fontSize: '18px' }}> ${formatPrice(finalPrice)}</span>
+                        <span style={{ color: '#10b981', fontWeight: '700', fontSize: '18px' }}> ${formatPrice(finalPrice)}</span>
                       </>
                     ) : (
                       <span style={{ color: '#111827', fontWeight: '700', fontSize: '18px' }}> ${formatPrice(product.price)} </span>
@@ -299,13 +318,22 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                     onClick={(e) => {
                       e.stopPropagation();
                       addToCart({ ...product, finalPrice });
+                      const btn = e.currentTarget;
+                      const originalText = btn.innerText;
+                      btn.innerText = '✓ Added';
+                      btn.style.background = '#10b981';
+                      setTimeout(() => {
+                        btn.innerText = originalText;
+                        btn.style.background = '#111827';
+                      }, 1000);
                     }}
                     disabled={product.stock === 0}
                     style={{
                       padding: '8px 20px', borderRadius: '6px', border: 'none',
                       background: product.stock === 0 ? '#f3f4f6' : '#111827',
                       color: product.stock === 0 ? '#9ca3af' : '#ffffff',
-                      fontWeight: '600', fontSize: '14px', cursor: product.stock === 0 ? 'not-allowed' : 'pointer'
+                      fontWeight: '600', fontSize: '14px', cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s'
                     }}
                   >
                     {product.stock === 0 ? 'Out' : 'Add'}
