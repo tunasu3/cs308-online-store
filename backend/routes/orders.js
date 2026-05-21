@@ -134,7 +134,62 @@ router.put('/:id/status', async (req, res) => {
     }
 });
 
+router.get('/sales/refund-requests', async (req, res) => {
+    try {
+        
+        const orders = await Order.find({
+            $or: [
+                { status: 'Refund Requested' },
+                { 'items.refundStatus': 'Refund Requested' }
+            ]
+        }).sort({ updatedAt: -1 });
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
+
+router.put('/:id/refund-evaluate', async (req, res) => {
+    try {
+        const { action } = req.body; 
+        const order = await Order.findById(req.params.id);
+
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+
+        if (action === 'approve') {
+            order.status = 'Refunded';
+
+            
+            for (let item of order.items) {
+                
+                if (item.refundStatus === 'Refund Requested' || order.status === 'Refund Requested') {
+                    
+                    const product = await Product.findById(item.productId);
+                    if (product) {
+                        product.stock += item.quantity; 
+                        await product.save();
+                    }
+                    item.refundStatus = 'Refunded'; 
+                }
+            }
+        } else if (action === 'reject') {
+            order.status = 'Refund Rejected';
+            for (let item of order.items) {
+                if (item.refundStatus === 'Refund Requested') {
+                    item.refundStatus = 'Refund Rejected';
+                }
+            }
+        } else {
+            return res.status(400).json({ error: 'Invalid action.' });
+        }
+
+        await order.save();
+        res.json({ message: `Refund successfully ${action}d!`, order });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 router.get('/:id/invoice', async (req, res) => {
     try {
         const order = await Order.findById(req.params.id);

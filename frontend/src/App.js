@@ -8,6 +8,7 @@ import SalesManager from './pages/Dashboard/SalesManager';
 import Cart from './pages/Cart';
 import MyOrders from './pages/MyOrders';
 import Wishlist from './pages/Wishlist';
+import RefundEvaluation from './pages/Dashboard/RefundEvaluation'; 
 
 export default function App() {
   const [view, setView] = useState('shop');
@@ -133,6 +134,7 @@ export default function App() {
         wishlistCount={wishlistCount}
       />
 
+      {}
       {isMenuOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '280px', height: '100%', backgroundColor: '#fff', zIndex: 1000, padding: '30px', boxShadow: '5px 0 15px rgba(0,0,0,0.1)' }}>
           <button onClick={() => setIsMenuOpen(false)} style={{ float: 'right', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
@@ -147,6 +149,10 @@ export default function App() {
                 </li>
                 <li onClick={() => { setView('salesManager'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}>
                   Sales Manager Dashboard
+                </li>
+                {}
+                <li onClick={() => { setView('refundEvaluation'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#2563eb', fontWeight: 'bold', borderBottom: '1px solid #eee' }}>
+                  Refund Evaluation
                 </li>
               </>
             )}
@@ -164,21 +170,35 @@ export default function App() {
         </div>
       )}
 
+      {}
       <main style={{ padding: '20px 5%' }}>
         {view === 'shop' && <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} updateWishlistCount={updateWishlistCount} />}
         {view === 'wishlist' && (
-  <Wishlist 
-    user={user} 
-    addToCart={addToCart} 
-    setView={setView} 
-    setSelectedProduct={setSelectedProduct} 
-    updateWishlistCount={updateWishlistCount} 
-  />
-)}
+          <Wishlist 
+            user={user} 
+            addToCart={addToCart} 
+            setView={setView} 
+            setSelectedProduct={setSelectedProduct} 
+            updateWishlistCount={updateWishlistCount} 
+          />
+        )}
         {view === 'cart' && <Cart cart={cart} setCart={setCart} user={user} setView={setView} fetchData={fetchData} />}
         {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} user={user} fetchData={fetchData} updateWishlistCount={updateWishlistCount} />}
         {view === 'myOrders' && <MyOrders user={user} setView={setView} products={products} setSelectedProduct={setSelectedProduct} />}
         {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager fetchData={fetchData} products={products} /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} updateWishlistCount={updateWishlistCount} />)}
+
+        {}
+        {view === 'refundEvaluation' && (
+          (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin') ? (
+            <RefundEvaluation />
+          ) : (
+            <div style={{ textAlign: 'center', marginTop: '50px' }}>
+              <h2>Access Denied</h2>
+              <p>You don't have permission to view this page.</p>
+              <button onClick={() => setView('shop')} style={{ padding: '10px 20px', marginTop: '15px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Go Back Home</button>
+            </div>
+          )
+        )}
 
         {(view === 'login' || view === 'register') && (
           <AuthCard 
