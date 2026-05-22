@@ -360,5 +360,36 @@ router.post('/:id/refund-request', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+router.put('/:id/cancel', async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
 
+        
+        if (order.status !== 'Processing') {
+            return res.status(400).json({ error: 'Only orders in "Processing" status can be cancelled.' });
+        }
+
+        
+        order.status = 'Cancelled';
+        await order.save();
+
+        
+        for (let item of order.items) {
+            if (item.productId) {
+                const product = await Product.findById(item.productId);
+                if (product) {
+                    product.stock += item.quantity;
+                    await product.save();
+                }
+            }
+        }
+
+        res.json({ message: 'Order cancelled successfully and stocks reverted.', order });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 module.exports = router;

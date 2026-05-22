@@ -4,11 +4,9 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  
   const fetchOrders = () => {
     if (!user) {
       setLoading(false);
@@ -16,7 +14,6 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
     }
     setLoading(true);
 
-   
     let url = `http://localhost:8000/api/orders/user/${user._id}`;
     if (startDate && endDate) {
       url += `?startDate=${startDate}&endDate=${endDate}`;
@@ -53,14 +50,15 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
   const downloadInvoice = (orderId) => {
     window.open(`http://localhost:8000/api/orders/${orderId}/invoice`, '_blank');
   };
+
   const downloadAllInvoices = () => {
-      let url = `http://localhost:8000/api/orders/user/${user._id}/invoices/download`;
-    
-      if (startDate && endDate) {
-        url += `?startDate=${startDate}&endDate=${endDate}`;
-      }
-      window.open(url, '_blank');
-    };
+    let url = `http://localhost:8000/api/orders/user/${user._id}/invoices/download`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    window.open(url, '_blank');
+  };
+
   const handleProductClick = (productId) => {
     const product = products.find(p => p._id === productId);
     if (product) {
@@ -71,38 +69,64 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
     }
   };
 
-  const handleRefundRequest = (order) => {
-  const daysSince = (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24);
+  // --- SIPARIŞ IPTAL FONKSIYONU ---
+  const handleCancelOrder = (orderId) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) return;
 
-  if (order.status !== 'Delivered') {
-    alert('Only delivered orders can be refunded.');
-    return;
-  }
-  if (daysSince > 30) {
-    alert('Sorry, the 30-day refund window for this order has expired.');
-    return;
-  }
-  if (!window.confirm('Are you sure you want to request a refund for this order?')) return;
-
-  fetch(`http://localhost:8000/api/orders/${order._id}/refund-request`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  })
-    .then(res => res.json())
-    .then(data => {
-      alert(data.message);
-      fetchOrders();
+    fetch(`http://localhost:8000/api/orders/${orderId}/cancel`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
     })
-    .catch(err => {
-      console.error(err);
-      alert('Error submitting refund request.');
-    });
-};
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          alert(data.error);
+        } else {
+          alert('Order cancelled successfully!');
+          fetchOrders(); 
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Error cancelling order.');
+      });
+  };
+
+  const handleRefundRequest = (order) => {
+    const daysSince = (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24);
+
+    if (order.status !== 'Delivered') {
+      alert('Only delivered orders can be refunded.');
+      return;
+    }
+    if (daysSince > 30) {
+      alert('Sorry, the 30-day refund window for this order has expired.');
+      return;
+    }
+    if (!window.confirm('Are you sure you want to request a refund for this order?')) return;
+
+    fetch(`http://localhost:8000/api/orders/${order._id}/refund-request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        fetchOrders();
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Error submitting refund request.');
+      });
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'Delivered': return { bg: '#d1fae5', text: '#065f46' };
       case 'In-Transit': return { bg: '#dbeafe', text: '#1e40af' };
+      case 'Cancelled': return { bg: '#fee2e2', text: '#991b1b' }; // İptal edilenler için kırmızı tonu
+      case 'Refund Requested': return { bg: '#fef3c7', text: '#d97706' };
+      case 'Refunded': return { bg: '#e0e7ff', text: '#3730a3' };
       case 'Processing':
       default: return { bg: '#fef3c7', text: '#92400e' };
     }
@@ -144,7 +168,6 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
 
       <h1 style={{ marginBottom: '10px' }}>My Orders</h1>
 
-      {}
       <div style={{ display: 'flex', gap: '15px', marginBottom: '25px', alignItems: 'center', backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
         <label style={{ fontSize: '14px', color: '#4b5563' }}>
           From: <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ padding: '6px', borderRadius: '6px', border: '1px solid #d1d5db', marginLeft: '5px' }} />
@@ -158,7 +181,6 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
         >
           Filter Invoices
         </button>
-        {}
         <button 
           onClick={downloadAllInvoices} 
           style={{ padding: '8px 16px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}
@@ -271,45 +293,71 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                     ${order.totalPrice?.toLocaleString()} 
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  {order.status === 'Delivered' && (
-  <button
-    onClick={() => handleRefundRequest(order)}
-    disabled={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30}
-    title={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '30-day refund window has expired' : 'Request a refund'}
-    style={{
-      padding: '10px 20px',
-      backgroundColor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#e5e7eb' : '#ef4444',
-      color: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#9ca3af' : '#fff',
-      border: 'none',
-      borderRadius: '6px',
-      cursor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? 'not-allowed' : 'pointer',
-      fontWeight: '600',
-    }}
-  >
-     Request Refund
-  </button>
-)}        
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  
+                  {/* --- SADECE PROCESSING DURUMUNDA CANCEL BUTONU GÖSTER --- */}
+                  {(order.status === 'Processing' || !order.status) && (
+                    <button
+                      onClick={() => handleCancelOrder(order._id)}
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#ef4444',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                      }}
+                    >
+                      ❌ Cancel Order
+                    </button>
+                  )}
 
-  {order.status === 'Refund Requested' && (
-    <span style={{ padding: '10px 16px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '6px', fontWeight: '600', fontSize: '14px' }}>
-      ⏳ Refund Pending
-    </span>
-  )}
-                <button
-                  onClick={() => downloadInvoice(order._id)}
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: '#3b82f6',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  📄 Download Invoice
-                </button>
+                  {order.status === 'Delivered' && (
+                    <button
+                      onClick={() => handleRefundRequest(order)}
+                      disabled={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30}
+                      title={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '30-day refund window has expired' : 'Request a refund'}
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#e5e7eb' : '#ef4444',
+                        color: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#9ca3af' : '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? 'not-allowed' : 'pointer',
+                        fontWeight: '600',
+                      }}
+                    >
+                       Request Refund
+                    </button>
+                  )}        
+
+                  {order.status === 'Refund Requested' && (
+                    <span style={{ padding: '10px 16px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '6px', fontWeight: '600', fontSize: '14px' }}>
+                       Refund Pending
+                    </span>
+                  )}
+
+                  {order.status === 'Cancelled' && (
+                    <span style={{ padding: '10px 16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', fontWeight: '600', fontSize: '14px' }}>
+                      🚫 Cancelled
+                    </span>
+                  )}
+
+                  <button
+                    onClick={() => downloadInvoice(order._id)}
+                    style={{
+                      padding: '10px 20px',
+                      backgroundColor: '#3b82f6',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: '600'
+                    }}
+                  >
+                    📄 Download Invoice
+                  </button>
                 </div>
               </div>
 
