@@ -62,3 +62,26 @@ exports.login = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+exports.verifySession = async (req, res) => {
+    try {
+        const { token } = req.body;
+
+        const { id, role } = jwt.verify(
+            token,
+            process.env.JWT_SECRET || 'secretkey'
+        );
+
+        const user = await User.findById(id);
+        if (!user) return res.status(400).json({ message: 'Invalid cookie content' });
+
+        res.json({ user: { _id: user._id, name: user.name, email: user.email, role: user.role } });
+    } catch (err) {
+        if (err.name == "TokenExpiredError") {
+            res.status(403).json({ message: "Session cookie expired" })
+        } else {
+            console.error('Login error:', err);
+            res.status(500).json({ message: err.message });
+        }
+    }
+};
