@@ -24,6 +24,7 @@ ChartJS.register(
 
 function SalesManager({ fetchData, products }) {
   const [discount, setDiscount] = useState("");
+  const [newPrice, setNewPrice] = useState(""); 
   const [selectedProduct, setSelectedProduct] = useState("");
   const [totalRevenue, setTotalRevenue] = useState(null);
   const [labels, setLabels] = useState([]);
@@ -34,6 +35,37 @@ function SalesManager({ fetchData, products }) {
   const [costData, setCostData] = useState([]);
   const [totalCost, setTotalCost] = useState(null);
   const [totalProfit, setTotalProfit] = useState(null);
+
+  
+  const updatePrice = async () => {
+    if (!selectedProduct) {
+      alert("Please select a product");
+      return;
+    }
+    if (newPrice === "") {
+      alert("Please enter a price");
+      return;
+    }
+    const priceValue = Number(newPrice);
+    if (priceValue <= 0) {
+      alert("Please enter a valid price greater than 0");
+      return;
+    }
+
+    try {
+      
+      await axios.put(`http://localhost:8000/api/products/${selectedProduct}`, {
+        price: priceValue,
+      });
+
+      await fetchData(); 
+      setNewPrice(""); 
+      alert("Product price updated successfully by Sales Manager!");
+    } catch (err) {
+      console.error(err);
+      alert("Error updating product price");
+    }
+  };
 
   const applyDiscount = async () => {
     if (!selectedProduct) {
@@ -209,6 +241,9 @@ function SalesManager({ fetchData, products }) {
     });
   };
 
+  
+  const currentSelectedProduct = products.find((p) => p._id === selectedProduct);
+
   return (
     <div
       style={{
@@ -228,63 +263,110 @@ function SalesManager({ fetchData, products }) {
         }}
       >
         <h2>Sales Manager Dashboard</h2>
-        <div style={{ marginBottom: "30px" }}>
-          <h3>Apply Discount</h3>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <select
-              value={selectedProduct}
-              onChange={(e) => setSelectedProduct(e.target.value)}
-              style={{
-                ...inputStyle,
-                appearance: "none",
-                WebkitAppearance: "none",
-                MozAppearance: "none",
-              }}
-            >
-              <option value="">Select Product</option>
-              {products.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <input
-              style={{
-                ...inputStyle,
-                width: "120px",
-                MozAppearance: "textfield",
-              }}
-              placeholder="Discount %"
-              type="number"
-              min="1"
-              max="100"
-              value={discount}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === "" || (Number(val) >= 1 && Number(val) <= 100)) {
-                  setDiscount(val);
-                }
-              }}
-            />
-            <button
-              onClick={applyDiscount}
-              disabled={!selectedProduct || !discount}
-              style={{
-                padding: "8px 14px",
-                background: "#2c3e50",
-                color: "#fff",
-                border: "none",
-                borderRadius: "6px",
-                fontWeight: "500",
-                opacity: !selectedProduct || !discount ? 0.6 : 1,
-                cursor:
-                  !selectedProduct || !discount ? "not-allowed" : "pointer",
-              }}
-            >
-              Apply
-            </button>
-          </div>
+        
+        {}
+        <div style={{ marginBottom: "25px", paddingBottom: "20px", borderBottom: "1px solid #eee" }}>
+          <h3>Select Product to Manage</h3>
+          <select
+            value={selectedProduct}
+            onChange={(e) => setSelectedProduct(e.target.value)}
+            style={{
+              ...inputStyle,
+              width: "100%",
+              maxWidth: "400px",
+              appearance: "none",
+              WebkitAppearance: "none",
+              MozAppearance: "none",
+            }}
+          >
+            <option value="">-- Choose Product --</option>
+            {products.map((p) => (
+              <option key={p._id} value={p._id}>
+                {p.name} (Current Price: ${p.price})
+              </option>
+            ))}
+          </select>
         </div>
+
+        <div style={{ display: "flex", gap: "30px", flexWrap: "wrap", marginBottom: "30px" }}>
+          
+          {}
+          <div style={{ flex: 1, minWidth: "280px" }}>
+            <h3>Update Price (Base Price)</h3>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <input
+                style={{
+                  ...inputStyle,
+                  width: "130px",
+                }}
+                placeholder="New Price $"
+                type="number"
+                min="0"
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+              />
+              <button
+                onClick={updatePrice}
+                disabled={!selectedProduct || !newPrice}
+                style={{
+                  padding: "8px 14px",
+                  background: "#27ae60",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontWeight: "500",
+                  opacity: !selectedProduct || !newPrice ? 0.6 : 1,
+                  cursor: !selectedProduct || !newPrice ? "not-allowed" : "pointer",
+                }}
+              >
+                Update Price
+              </button>
+            </div>
+          </div>
+
+          {}
+          <div style={{ flex: 1, minWidth: "280px" }}>
+            <h3>Apply Discount</h3>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <input
+                style={{
+                  ...inputStyle,
+                  width: "120px",
+                }}
+                placeholder="Discount %"
+                type="number"
+                min="1"
+                max="100"
+                value={discount}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "" || (Number(val) >= 1 && Number(val) <= 100)) {
+                    setDiscount(val);
+                  }
+                }}
+              />
+              <button
+                onClick={applyDiscount}
+                disabled={!selectedProduct || !discount}
+                style={{
+                  padding: "8px 14px",
+                  background: "#2c3e50",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontWeight: "500",
+                  opacity: !selectedProduct || !discount ? 0.6 : 1,
+                  cursor: !selectedProduct || !discount ? "not-allowed" : "pointer",
+                }}
+              >
+                Apply Discount
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        {}
         <div style={{ marginTop: "30px" }}>
           <h3>Discounted Products</h3>
           {products.filter((p) => p.discount > 0).length === 0 ? (
@@ -300,6 +382,7 @@ function SalesManager({ fetchData, products }) {
               <thead>
                 <tr style={{ textAlign: "left", borderBottom: "2px solid #eee" }}>
                   <th style={{ padding: "10px" }}>Product</th>
+                  <th style={{ padding: "10px" }}>Price</th>
                   <th style={{ padding: "10px" }}>Discount</th>
                   <th style={{ padding: "10px" }}>Action</th>
                 </tr>
@@ -313,6 +396,7 @@ function SalesManager({ fetchData, products }) {
                       style={{ borderBottom: "1px solid #f0f0f0" }}
                     >
                       <td style={{ padding: "10px" }}>{p.name}</td>
+                      <td style={{ padding: "10px" }}>${p.price}</td>
                       <td
                         style={{
                           padding: "10px",
@@ -361,8 +445,10 @@ function SalesManager({ fetchData, products }) {
             </table>
           )}
         </div>
-        <div style={{ marginTop: "30px" }}>
-          <h3>Revenue</h3>
+
+        {}
+        <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "2px solid #eee" }}>
+          <h3>Revenue & Financial Reports</h3>
           <input
             type="date"
             style={{ ...inputStyle, marginRight: "10px" }}
@@ -427,15 +513,15 @@ function SalesManager({ fetchData, products }) {
                 })}
               </h3>
               {totalCost !== null && (
-  <h3 style={{ marginTop: "10px", color: "#e74c3c" }}>
-    Total Cost: ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-  </h3>
-)}
-{totalProfit !== null && (
-  <h3 style={{ marginTop: "10px", color: totalProfit >= 0 ? "#27ae60" : "#e74c3c" }}>
-    {totalProfit >= 0 ? "Total Profit" : "Total Loss"}: ${Math.abs(totalProfit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-  </h3>
-)}
+                <h3 style={{ marginTop: "10px", color: "#e74c3c" }}>
+                  Total Cost: ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </h3>
+              )}
+              {totalProfit !== null && (
+                <h3 style={{ marginTop: "10px", color: totalProfit >= 0 ? "#27ae60" : "#e74c3c" }}>
+                  {totalProfit >= 0 ? "Total Profit" : "Total Loss"}: ${Math.abs(totalProfit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </h3>
+              )}
               <div
                 style={{
                   width: "100%",
