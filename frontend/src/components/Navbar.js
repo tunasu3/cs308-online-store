@@ -18,7 +18,7 @@ export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOp
 
   const getFirstName = () => {
     if (!user) return 'Sign In';
-    if (user.fullName) return user.fullName.split(' ')[0];
+    if (user.name) return user.name.split(' ')[0];
     if (user.email) return user.email.split('@')[0]; 
     return 'User'; 
   };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useCookies } from 'react-cookie';
 import Navbar from './components/Navbar';
 import Shop from './pages/Shop';
 import ProductDetail from './pages/ProductDetail';
@@ -11,6 +12,8 @@ import Wishlist from './pages/Wishlist';
 import RefundEvaluation from './pages/Dashboard/RefundEvaluation'; 
 
 export default function App() {
+  const [cookies, setCookie, removeCookie] = useCookies(["sessionToken"]);
+
   const [view, setView] = useState('shop');
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -21,6 +24,28 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [authData, setAuthData] = useState({ email: '', password: '', fullName: '', taxId: '', address: '' });
   const [wishlistCount, setWishlistCount] = useState(0);
+
+  const verifySession = useCallback(async () => {
+    if (cookies.sessionToken) {
+      try {
+        const res = await fetch('http://localhost:8000/api/auth/verifySession', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: cookies.sessionToken })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setUser(data.user);
+        } else {
+          alert(data.message);
+          removeCookie("sessionToken");
+        }
+      } catch (err) { 
+        console.error(err); 
+      }
+    }
+  }, [cookies]);
+  useEffect(() => { verifySession(); }, []);
 
   const updateWishlistCount = useCallback(async () => {
     if (!user) {
@@ -75,6 +100,7 @@ export default function App() {
       const data = await res.json();
       if (res.ok) {
         setUser(data.user);
+        setCookie("sessionToken", data.token, { expiresIn: 7 * 24 * 60 * 60 });
         setView('shop');
       } else { 
         alert(data.message); 
@@ -101,6 +127,7 @@ export default function App() {
       const data = await res.json();
       if (res.ok) {
         setUser(data.user);
+        setCookie("sessionToken", data.token, { expiresIn: 7 * 24 * 60 * 60 });
         setView('shop');
         alert('Registration successful! You are now logged in.');
       } else {
@@ -164,7 +191,7 @@ export default function App() {
             )}
 
             {user && (
-              <li onClick={() => { setUser(null); setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#666' }}>Logout</li>
+              <li onClick={() => { setUser(null); removeCookie("sessionToken"); setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#666' }}>Logout</li>
             )}
           </ul>
         </div>
