@@ -188,17 +188,18 @@ export default function App() {
         {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager fetchData={fetchData} products={products} /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} updateWishlistCount={updateWishlistCount} />)}
 
         {}
-        {view === 'refundEvaluation' && (
-          (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin') ? (
-            <RefundEvaluation />
-          ) : (
-            <div style={{ textAlign: 'center', marginTop: '50px' }}>
-              <h2>Access Denied</h2>
-              <p>You don't have permission to view this page.</p>
-              <button onClick={() => setView('shop')} style={{ padding: '10px 20px', marginTop: '15px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Go Back Home</button>
-            </div>
-          )
-        )}
+{view === 'refundEvaluation' && (
+  (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin') ? (
+    
+    <RefundEvaluation fetchData={fetchData} />
+  ) : (
+    <div style={{ textAlign: 'center', marginTop: '50px' }}>
+      <h2>Access Denied</h2>
+      <p>You don't have permission to view this page.</p>
+      <button onClick={() => setView('shop')} style={{ padding: '10px 20px', marginTop: '15px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Go Back Home</button>
+    </div>
+  )
+)}
 
         {(view === 'login' || view === 'register') && (
           <AuthCard 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function RefundEvaluation() {
+export default function RefundEvaluation({ fetchData }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -35,6 +35,7 @@ export default function RefundEvaluation() {
       .then((data) => {
         setMessage(`Success: Request has been ${action}d!`);
         fetchRefundRequests();
+        if (fetchData) fetchData();
         setTimeout(() => setMessage(''), 4000);
       })
       .catch((err) => console.error(err));

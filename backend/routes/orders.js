@@ -159,27 +159,19 @@ router.put('/:id/refund-evaluate', async (req, res) => {
 
         if (action === 'approve') {
             order.status = 'Refunded';
-
+            
             
             for (let item of order.items) {
-                
-                if (item.refundStatus === 'Refund Requested' || order.status === 'Refund Requested') {
-                    
+                if (item.productId) { 
                     const product = await Product.findById(item.productId);
                     if (product) {
-                        product.stock += item.quantity; 
+                        product.stock += item.quantity;
                         await product.save();
                     }
-                    item.refundStatus = 'Refunded'; 
                 }
             }
         } else if (action === 'reject') {
             order.status = 'Refund Rejected';
-            for (let item of order.items) {
-                if (item.refundStatus === 'Refund Requested') {
-                    item.refundStatus = 'Refund Rejected';
-                }
-            }
         } else {
             return res.status(400).json({ error: 'Invalid action.' });
         }
