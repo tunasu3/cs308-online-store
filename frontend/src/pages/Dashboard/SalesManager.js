@@ -30,6 +30,10 @@ function SalesManager({ fetchData, products }) {
   const [data, setData] = useState([]);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  const [profitData, setProfitData] = useState([]);
+  const [costData, setCostData] = useState([]);
+  const [totalCost, setTotalCost] = useState(null);
+  const [totalProfit, setTotalProfit] = useState(null);
 
   const applyDiscount = async () => {
     if (!selectedProduct) {
@@ -97,6 +101,28 @@ function SalesManager({ fetchData, products }) {
     }
   };
 
+  const getProfitLoss = async () => {
+    if (!start || !end) {
+      alert("Please select start and end dates");
+      return;
+    }
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/api/sales/profit-loss?start=${start}&end=${end}`
+      );
+      setTotalRevenue(res.data.totalRevenue);
+      setTotalCost(res.data.totalCost);
+      setTotalProfit(res.data.totalProfit);
+      setLabels(res.data.labels.map(date => new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })));
+      setData(res.data.revenueData);
+      setProfitData(res.data.profitData);
+      setCostData(res.data.costData);
+    } catch (err) {
+      console.error(err);
+      alert("Error fetching profit/loss data");
+    }
+  };
+
   const chartData = {
     labels: labels,
     datasets: [
@@ -104,21 +130,31 @@ function SalesManager({ fetchData, products }) {
         label: "Revenue",
         data: data,
         borderColor: "#2c3e50",
-        backgroundColor: (context) => {
-          const chart = context.chart;
-          const { ctx, chartArea } = chart;
-          if (!chartArea) return null;
-          const gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
-          gradient.addColorStop(0, "rgba(44, 62, 80, 0.7)");
-          gradient.addColorStop(1, "rgba(44, 62, 80, 0.05)");
-          return gradient;
-        },
+        backgroundColor: "rgba(44, 62, 80, 0.1)",
         tension: 0.4,
-        fill: true,
+        fill: false,
         pointBackgroundColor: "#2c3e50",
-        pointBorderColor: "#fff",
         pointRadius: 5,
-        pointHoverRadius: 7,
+      },
+      {
+        label: "Cost",
+        data: costData,
+        borderColor: "#e74c3c",
+        backgroundColor: "rgba(231, 76, 60, 0.1)",
+        tension: 0.4,
+        fill: false,
+        pointBackgroundColor: "#e74c3c",
+        pointRadius: 5,
+      },
+      {
+        label: "Profit",
+        data: profitData,
+        borderColor: "#27ae60",
+        backgroundColor: "rgba(39, 174, 96, 0.1)",
+        tension: 0.4,
+        fill: false,
+        pointBackgroundColor: "#27ae60",
+        pointRadius: 5,
       },
     ],
   };
@@ -127,7 +163,7 @@ function SalesManager({ fetchData, products }) {
     responsive: true,
     plugins: {
       legend: {
-        display: false,
+        display: true,
       },
       tooltip: {
         callbacks: {
@@ -350,6 +386,20 @@ function SalesManager({ fetchData, products }) {
           >
             Get Revenue
           </button>
+          <button
+            onClick={getProfitLoss}
+            style={{
+              padding: "8px 14px",
+              background: "#27ae60",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              marginLeft: "10px",
+            }}
+          >
+            Get Profit/Loss
+          </button>
           {start && end && (
             <div
               style={{
@@ -376,6 +426,16 @@ function SalesManager({ fetchData, products }) {
                   maximumFractionDigits: 2,
                 })}
               </h3>
+              {totalCost !== null && (
+  <h3 style={{ marginTop: "10px", color: "#e74c3c" }}>
+    Total Cost: ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+  </h3>
+)}
+{totalProfit !== null && (
+  <h3 style={{ marginTop: "10px", color: totalProfit >= 0 ? "#27ae60" : "#e74c3c" }}>
+    {totalProfit >= 0 ? "Total Profit" : "Total Loss"}: ${Math.abs(totalProfit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+  </h3>
+)}
               <div
                 style={{
                   width: "100%",

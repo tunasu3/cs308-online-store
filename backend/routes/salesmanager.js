@@ -163,4 +163,60 @@ router.put('/orders/:id/status', async (req, res) => {
     }
 });
 
+// PROFIT/LOSS ANALYTICS
+router.get('/profit-loss', async (req, res) => {
+    try {
+        const { start, end } = req.query;
+
+        if (!start || !end) {
+            return res.status(400).json({ message: "Start and end dates are required" });
+        }
+
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        endDate.setHours(23, 59, 59, 999);
+
+        const orders = await Order.find({
+            createdAt: { $gte: startDate, $lte: endDate }
+        }).populate('items.productId');
+
+        const dailyMap = {};
+
+        for (const order of orders) {
+            const day = order.createdAt.toISOString().split('T')[0];
+            if (!dailyMap[day]) dailyMap[day] = { revenue: 0, cost: 0 };
+
+            dailyMap[day].revenue += order.totalPrice;
+
+            for (const item of order.items) {
+                const product = await Product.findById(item.productId);
+                const cost = product ? (product.cost || 0) : 0;
+                dailyMap[day].cost += cost * item.quantity;
+            }
+        }
+
+        const labels = Object.keys(dailyMap).sort();
+        const revenueData = labels.map(d => dailyMap[d].revenue);
+        const costData = labels.map(d => dailyMap[d].cost);
+        const profitData = labels.map((d, i) => revenueData[i] - costData[i]);
+
+        const totalRevenue = revenueData.reduce((a, b) => a + b, 0);
+        const totalCost = costData.reduce((a, b) => a + b, 0);
+        const totalProfit = totalRevenue - totalCost;
+
+        res.json({
+            labels,
+            revenueData,
+            costData,
+            profitData,
+            totalRevenue,
+            totalCost,
+            totalProfit
+        });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
