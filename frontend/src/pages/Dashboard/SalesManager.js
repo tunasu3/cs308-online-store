@@ -24,7 +24,7 @@ ChartJS.register(
 
 function SalesManager({ fetchData, products }) {
   const [discount, setDiscount] = useState("");
-  const [newPrice, setNewPrice] = useState(""); 
+  const [newPrice, setNewPrice] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [totalRevenue, setTotalRevenue] = useState(null);
   const [labels, setLabels] = useState([]);
@@ -36,7 +36,10 @@ function SalesManager({ fetchData, products }) {
   const [totalCost, setTotalCost] = useState(null);
   const [totalProfit, setTotalProfit] = useState(null);
 
-  
+  const [invoices, setInvoices] = useState([]);
+  const [invoiceStart, setInvoiceStart] = useState("");
+  const [invoiceEnd, setInvoiceEnd] = useState("");
+
   const updatePrice = async () => {
     if (!selectedProduct) {
       alert("Please select a product");
@@ -53,13 +56,12 @@ function SalesManager({ fetchData, products }) {
     }
 
     try {
-      
       await axios.put(`http://localhost:8000/api/products/${selectedProduct}`, {
         price: priceValue,
       });
 
-      await fetchData(); 
-      setNewPrice(""); 
+      await fetchData();
+      setNewPrice("");
       alert("Product price updated successfully by Sales Manager!");
     } catch (err) {
       console.error(err);
@@ -155,6 +157,33 @@ function SalesManager({ fetchData, products }) {
     }
   };
 
+  const getInvoices = async () => {
+    if (!invoiceStart || !invoiceEnd) {
+      alert("Please select start and end dates for invoices");
+      return;
+    }
+    try {
+      const res = await axios.get("http://localhost:8000/api/orders");
+      const sDate = new Date(invoiceStart);
+      sDate.setHours(0, 0, 0, 0);
+      const eDate = new Date(invoiceEnd);
+      eDate.setHours(23, 59, 59, 999);
+
+      const filtered = res.data.filter((order) => {
+        const orderDate = new Date(order.createdAt);
+        return orderDate >= sDate && orderDate <= eDate;
+      });
+      setInvoices(filtered);
+    } catch (err) {
+      console.error(err);
+      alert("Error fetching invoices");
+    }
+  };
+
+  const downloadInvoicePDF = (id) => {
+    window.open(`http://localhost:8000/api/orders/${id}/invoice`, "_blank");
+  };
+
   const chartData = {
     labels: labels,
     datasets: [
@@ -241,7 +270,6 @@ function SalesManager({ fetchData, products }) {
     });
   };
 
-  
   const currentSelectedProduct = products.find((p) => p._id === selectedProduct);
 
   return (
@@ -264,7 +292,6 @@ function SalesManager({ fetchData, products }) {
       >
         <h2>Sales Manager Dashboard</h2>
         
-        {}
         <div style={{ marginBottom: "25px", paddingBottom: "20px", borderBottom: "1px solid #eee" }}>
           <h3>Select Product to Manage</h3>
           <select
@@ -289,8 +316,6 @@ function SalesManager({ fetchData, products }) {
         </div>
 
         <div style={{ display: "flex", gap: "30px", flexWrap: "wrap", marginBottom: "30px" }}>
-          
-          {}
           <div style={{ flex: 1, minWidth: "280px" }}>
             <h3>Update Price (Base Price)</h3>
             <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -324,15 +349,11 @@ function SalesManager({ fetchData, products }) {
             </div>
           </div>
 
-          {}
           <div style={{ flex: 1, minWidth: "280px" }}>
             <h3>Apply Discount</h3>
             <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
               <input
-                style={{
-                  ...inputStyle,
-                  width: "120px",
-                }}
+                style={{ ...inputStyle, width: "120px" }}
                 placeholder="Discount %"
                 type="number"
                 min="1"
@@ -340,9 +361,7 @@ function SalesManager({ fetchData, products }) {
                 value={discount}
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (val === "" || (Number(val) >= 1 && Number(val) <= 100)) {
-                    setDiscount(val);
-                  }
+                  if (val === "" || (Number(val) >= 1 && Number(val) <= 100)) setDiscount(val);
                 }}
               />
               <button
@@ -363,22 +382,14 @@ function SalesManager({ fetchData, products }) {
               </button>
             </div>
           </div>
-
         </div>
 
-        {}
         <div style={{ marginTop: "30px" }}>
           <h3>Discounted Products</h3>
           {products.filter((p) => p.discount > 0).length === 0 ? (
             <p style={{ color: "#777" }}>No discounted products</p>
           ) : (
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                marginTop: "10px",
-              }}
-            >
+            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
               <thead>
                 <tr style={{ textAlign: "left", borderBottom: "2px solid #eee" }}>
                   <th style={{ padding: "10px" }}>Product</th>
@@ -388,147 +399,98 @@ function SalesManager({ fetchData, products }) {
                 </tr>
               </thead>
               <tbody>
-                {products
-                  .filter((p) => p.discount > 0)
-                  .map((p) => (
-                    <tr
-                      key={p._id}
-                      style={{ borderBottom: "1px solid #f0f0f0" }}
-                    >
-                      <td style={{ padding: "10px" }}>{p.name}</td>
-                      <td style={{ padding: "10px" }}>${p.price}</td>
-                      <td
-                        style={{
-                          padding: "10px",
-                          color: "#e74c3c",
-                          fontWeight: "500",
+                {products.filter((p) => p.discount > 0).map((p) => (
+                  <tr key={p._id} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                    <td style={{ padding: "10px" }}>{p.name}</td>
+                    <td style={{ padding: "10px" }}>${p.price}</td>
+                    <td style={{ padding: "10px", color: "#e74c3c", fontWeight: "500" }}>{p.discount}%</td>
+                    <td style={{ padding: "10px" }}>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await axios.put(`http://localhost:8000/api/sales/discount/${p._id}`, { discount: 0 });
+                            const flags = JSON.parse(localStorage.getItem("wishlist_flags") || "{}");
+                            delete flags[p._id];
+                            localStorage.setItem("wishlist_flags", JSON.stringify(flags));
+                            await fetchData();
+                          } catch (err) {
+                            alert("Error removing discount");
+                          }
                         }}
+                        style={{ padding: "6px 10px", background: "#e74c3c", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}
                       >
-                        {p.discount}%
-                      </td>
-                      <td style={{ padding: "10px" }}>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await axios.put(
-                                `http://localhost:8000/api/sales/discount/${p._id}`,
-                                { discount: 0 }
-                              );
-                              const flags = JSON.parse(
-                                localStorage.getItem("wishlist_flags") || "{}"
-                              );
-                              delete flags[p._id];
-                              localStorage.setItem(
-                                "wishlist_flags",
-                                JSON.stringify(flags)
-                              );
-                              await fetchData();
-                            } catch (err) {
-                              alert("Error removing discount");
-                            }
-                          }}
-                          style={{
-                            padding: "6px 10px",
-                            background: "#e74c3c",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           )}
         </div>
 
-        {}
+        <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "2px solid #eee" }}>
+          <h3>Invoices Manager</h3>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "15px" }}>
+            <input type="date" style={inputStyle} onChange={(e) => setInvoiceStart(e.target.value)} />
+            <input type="date" style={inputStyle} onChange={(e) => setInvoiceEnd(e.target.value)} />
+            <button onClick={getInvoices} style={{ padding: "8px 14px", background: "#2c3e50", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+              View Invoices
+            </button>
+          </div>
+
+          {invoices.length === 0 ? (
+            <p style={{ color: "#777", fontSize: "14px" }}>No invoices found in this range.</p>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
+              <thead>
+                <tr style={{ textAlign: "left", borderBottom: "2px solid #eee", background: "#f9f9f9" }}>
+                  <th style={{ padding: "10px" }}>Invoice ID</th>
+                  <th style={{ padding: "10px" }}>Customer</th>
+                  <th style={{ padding: "10px" }}>Total</th>
+                  <th style={{ padding: "10px" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map((inv) => (
+                  <tr key={inv._id} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                    <td style={{ padding: "10px", fontSize: "12px", color: "#555" }}>{inv._id}</td>
+                    <td style={{ padding: "10px" }}>{inv.userName || inv.userEmail}</td>
+                    <td style={{ padding: "10px", fontWeight: "500" }}>${inv.totalPrice?.toLocaleString()}</td>
+                    <td style={{ padding: "10px" }}>
+                      <button 
+                        onClick={() => downloadInvoicePDF(inv._id)} 
+                        style={{ padding: "6px 12px", background: "#3498db", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "500", fontSize: "13px" }}
+                      >
+                        📄 Download / Print PDF
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
         <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "2px solid #eee" }}>
           <h3>Revenue & Financial Reports</h3>
-          <input
-            type="date"
-            style={{ ...inputStyle, marginRight: "10px" }}
-            onChange={(e) => setStart(e.target.value)}
-          />
-          <input
-            type="date"
-            style={{ ...inputStyle, marginRight: "10px" }}
-            onChange={(e) => setEnd(e.target.value)}
-          />
-          <button
-            onClick={getRevenue}
-            style={{
-              padding: "8px 14px",
-              background: "#2c3e50",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            Get Revenue
-          </button>
-          <button
-            onClick={getProfitLoss}
-            style={{
-              padding: "8px 14px",
-              background: "#27ae60",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              marginLeft: "10px",
-            }}
-          >
-            Get Profit/Loss
-          </button>
+          <input type="date" style={{ ...inputStyle, marginRight: "10px" }} onChange={(e) => setStart(e.target.value)} />
+          <input type="date" style={{ ...inputStyle, marginRight: "10px" }} onChange={(e) => setEnd(e.target.value)} />
+          <button onClick={getRevenue} style={{ padding: "8px 14px", background: "#2c3e50", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}>Get Revenue</button>
+          <button onClick={getProfitLoss} style={{ padding: "8px 14px", background: "#27ae60", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", marginLeft: "10px" }}>Get Profit/Loss</button>
+          
           {start && end && (
-            <div
-              style={{
-                marginTop: "12px",
-                padding: "8px 12px",
-                background: "#f1f2f6",
-                borderRadius: "6px",
-                fontSize: "14px",
-                color: "#444",
-                display: "block",
-                width: "fit-content",
-              }}
-            >
-              Showing Revenue from <strong>{formatDateLong(start)}</strong> to{" "}
-              <strong>{formatDateLong(end)}</strong>
+            <div style={{ marginTop: "12px", padding: "8px 12px", background: "#f1f2f6", borderRadius: "6px", fontSize: "14px", color: "#444", display: "block", width: "fit-content" }}>
+              Showing Revenue from <strong>{formatDateLong(start)}</strong> to <strong>{formatDateLong(end)}</strong>
             </div>
           )}
+          
           {totalRevenue !== null && (
             <>
-              <h3 style={{ marginTop: "20px" }}>
-                Total Revenue: $
-                {totalRevenue.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </h3>
-              {totalCost !== null && (
-                <h3 style={{ marginTop: "10px", color: "#e74c3c" }}>
-                  Total Cost: ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </h3>
-              )}
-              {totalProfit !== null && (
-                <h3 style={{ marginTop: "10px", color: totalProfit >= 0 ? "#27ae60" : "#e74c3c" }}>
-                  {totalProfit >= 0 ? "Total Profit" : "Total Loss"}: ${Math.abs(totalProfit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </h3>
-              )}
-              <div
-                style={{
-                  width: "100%",
-                  maxWidth: "800px",
-                  margin: "20px auto",
-                }}
-              >
+              <h3 style={{ marginTop: "20px" }}>Total Revenue: ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+              {totalCost !== null && <h3 style={{ marginTop: "10px", color: "#e74c3c" }}>Total Cost: ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>}
+              {totalProfit !== null && <h3 style={{ marginTop: "10px", color: totalProfit >= 0 ? "#27ae60" : "#e74c3c" }}>{totalProfit >= 0 ? "Total Profit" : "Total Loss"}: ${Math.abs(totalProfit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>}
+              <div style={{ width: "100%", maxWidth: "800px", margin: "20px auto" }}>
                 <Line data={chartData} options={options} />
               </div>
             </>
