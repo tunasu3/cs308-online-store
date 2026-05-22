@@ -239,4 +239,34 @@ router.get('/:id/invoice', async (req, res) => {
     }
 });
 
+// REFUND REQUEST (Customer - 30 day limit)
+router.post('/:id/refund-request', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (order.status !== 'Delivered') {
+      return res.status(400).json({ message: 'Only delivered orders can be refunded' });
+    }
+
+    const daysSince = (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24);
+    if (daysSince > 30) {
+      return res.status(400).json({ message: 'Refund window has expired (30-day limit)' });
+    }
+
+    if (order.status === 'Refund Requested') {
+      return res.status(400).json({ message: 'Refund already requested for this order' });
+    }
+
+    order.status = 'Refund Requested';
+    order.refundRequestedAt = new Date();
+    await order.save();
+
+    res.json({ message: 'Refund request submitted successfully', order });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

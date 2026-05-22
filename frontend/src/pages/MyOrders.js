@@ -35,8 +35,20 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, [user]);
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    let url = `http://localhost:8000/api/orders/user/${user._id}`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    fetch(url)
+      .then(res => res.json())
+      .then(data => { setOrders(data); setLoading(false); })
+      .catch(err => { console.error(err); setLoading(false); });
+  }, [user, startDate, endDate]);
 
   const downloadInvoice = (orderId) => {
     window.open(`http://localhost:8000/api/orders/${orderId}/invoice`, '_blank');
@@ -58,6 +70,34 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
       alert('This product is no longer available in the store.');
     }
   };
+
+  const handleRefundRequest = (order) => {
+  const daysSince = (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24);
+
+  if (order.status !== 'Delivered') {
+    alert('Only delivered orders can be refunded.');
+    return;
+  }
+  if (daysSince > 30) {
+    alert('Sorry, the 30-day refund window for this order has expired.');
+    return;
+  }
+  if (!window.confirm('Are you sure you want to request a refund for this order?')) return;
+
+  fetch(`http://localhost:8000/api/orders/${order._id}/refund-request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message);
+      fetchOrders();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Error submitting refund request.');
+    });
+};
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -231,6 +271,31 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                     ${order.totalPrice?.toLocaleString()} 
                   </div>
                 </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {order.status === 'Delivered' && (
+  <button
+    onClick={() => handleRefundRequest(order)}
+    disabled={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30}
+    title={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '30-day refund window has expired' : 'Request a refund'}
+    style={{
+      padding: '10px 20px',
+      backgroundColor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#e5e7eb' : '#ef4444',
+      color: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#9ca3af' : '#fff',
+      border: 'none',
+      borderRadius: '6px',
+      cursor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? 'not-allowed' : 'pointer',
+      fontWeight: '600',
+    }}
+  >
+     Request Refund
+  </button>
+)}        
+
+  {order.status === 'Refund Requested' && (
+    <span style={{ padding: '10px 16px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '6px', fontWeight: '600', fontSize: '14px' }}>
+      ⏳ Refund Pending
+    </span>
+  )}
                 <button
                   onClick={() => downloadInvoice(order._id)}
                   style={{
@@ -245,6 +310,7 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                 >
                   📄 Download Invoice
                 </button>
+                </div>
               </div>
 
               {order.deliveryAddress && (

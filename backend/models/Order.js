@@ -13,11 +13,12 @@ const OrderSchema = new mongoose.Schema({
     totalPrice: { type: Number, required: true },
     status: {
         type: String,
-        enum: ['Processing', 'In-Transit', 'Delivered'],
+        enum: ['Processing', 'In-Transit', 'Delivered', 'Refund Requested', 'Refunded', 'Refund Rejected'],
         default: 'Processing'
     },
     deliveryAddress: { type: String, default: '' },
-    paymentMethod: { type: String, default: 'Credit Card' }
+    paymentMethod: { type: String, default: 'Credit Card' },
+    refundRequestedAt: { type: Date, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Order', OrderSchema);
