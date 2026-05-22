@@ -3,6 +3,16 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const PDFDocument = require('pdfkit');
+const nodemailer = require('nodemailer'); 
+
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.MAIL_USER, 
+        pass: process.env.MAIL_PASS  
+    }
+});
 
 
 router.post('/', async (req, res) => {
@@ -21,7 +31,133 @@ router.post('/', async (req, res) => {
         const order = new Order({ user: userId, userName, userEmail, items, totalPrice, deliveryAddress });
         const savedOrder = await order.save();
 
+        const itemsHtml = items.map(item => `
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.name}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">x${item.quantity}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${(item.price * item.quantity).toLocaleString()} TL</td>
+            </tr>
+        `).join('');
+
+        const mailOptions = {
+            from: `"CS308 Gaming Store" <${process.env.EMAIL_USER}>`,
+            to: userEmail, 
+            subject: `Invoice for Your Order #${savedOrder._id}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee;">
+                    <h2 style="text-align: center; color: #1f2937;">CS308 GAMING STORE</h2>
+                    <p style="text-align: center; color: #6b7280;">Official Invoice / Order Confirmation</p>
+                    <hr style="border: 0; border-top: 1px solid #e5e7eb;">
+                    <p><strong>Dear ${userName},</strong></p>
+                    <p>Thank you for shopping with us! Your order has been successfully placed. Below are your invoice details:</p>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                        <thead>
+                            <tr style="background-color: #f3f4f6;">
+                                <th style="padding: 8px; text-align: left;">Item</th>
+                                <th style="padding: 8px; text-align: center;">Qty</th>
+                                <th style="padding: 8px; text-align: right;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml}
+                        </tbody>
+                    </table>
+                    <h3 style="text-align: right; margin-top: 20px; color: #111827;">TOTAL: ${totalPrice.toLocaleString()} TL</h3>
+                    <hr style="border: 0; border-top: 1px solid #e5e7eb;">
+                    <p><strong>Delivery Address:</strong> ${deliveryAddress}</p>
+                    <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 30px;">
+                        Thank you for your business! If you have any questions, please reply to this email.
+                    </p>
+                </div>
+            `
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) console.log('Invoice email error:', error);
+            else console.log('Invoice email sent:', info.response);
+        });
+
         res.status(201).json({ message: 'Order placed!', id: savedOrder.id });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+router.put('/:id/refund-evaluate', async (req, res) => {
+    try {
+        const { action } = req.body; 
+        const order = await Order.findById(req.params.id);
+
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+
+        if (action === 'approve') {
+            order.status = 'Refunded';
+            
+            
+            const refundMailOptions = {
+                from: `"CS308 Gaming Store" <${process.env.MAIL_USER}>`,
+                to: order.userEmail, 
+                subject: `✅ Refund Approved for Order #${order._id}`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee;">
+                        <h2 style="color: #10B981; text-align: center;">Refund Approved</h2>
+                        <p>Dear <strong>${order.userName}</strong>,</p>
+                        <p>Your refund request for order <strong>#${order._id}</strong> has been successfully approved by our Sales Manager.</p>
+                        <p>The total amount of <strong>${order.totalPrice.toLocaleString()} TL</strong> has been credited back to your payment method. It may take a few business days to reflect in your account.</p>
+                        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+                        <p style="text-align: center; color: #9ca3af; font-size: 12px;">Thank you for your patience. CS308 Gaming Store</p>
+                    </div>
+                `
+            };
+
+            transporter.sendMail(refundMailOptions, (err, info) => {
+                if (err) console.log('Refund approval email error:', err);
+                else console.log('Refund approval email sent to customer:', order.userEmail);
+            });
+           
+            for (let item of order.items) {
+                if (item.productId) { 
+                    const product = await Product.findById(item.productId);
+                    if (product) {
+                        const oldStock = product.stock;
+                        product.stock += item.quantity;
+                        
+                        
+                        if (oldStock === 0 && product.stock > 0 && product.waitingList && product.waitingList.length > 0) {
+                            const targetEmails = product.waitingList.filter(email => email && email.trim() !== '');
+                            
+                            if (targetEmails.length > 0) {
+                                const stockMailOptions = {
+                                    from: `"CS308 Gaming Store" <${process.env.MAIL_USER}>`,
+                                    to: targetEmails.join(', '), 
+                                    subject: `🔥 Good News! ${product.name} is Back in Stock!`,
+                                    html: `<p>Hello, the product <strong>${product.name}</strong> you've been waiting for is back in stock! Grab it before it sells out again!</p>`
+                                };
+
+                                transporter.sendMail(stockMailOptions, (err, info) => {
+                                    if (err) console.log('Stock notification email error:', err);
+                                    else console.log('Stock notification sent to waiting list:', info.response);
+                                });
+                            }
+
+                            product.waitingList = []; 
+                        }
+
+                        await product.save();
+                    }
+                }
+            }
+        } else if (action === 'reject') {
+            order.status = 'Refund Rejected';
+            
+            
+        } else {
+            return res.status(400).json({ error: 'Invalid action.' });
+        }
+
+        await order.save();
+        res.json({ message: `Refund successfully ${action}d!`, order });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -43,7 +179,6 @@ router.get('/user/:userId', async (req, res) => {
         const { startDate, endDate } = req.query;
         let query = { user: req.params.userId };
 
-        
         if (startDate && endDate && startDate !== '' && endDate !== '' && startDate !== 'undefined') {
             query.createdAt = {
                 $gte: new Date(new Date(startDate).setHours(0, 0, 0, 0)),
@@ -82,7 +217,6 @@ router.get('/user/:userId/invoices/download', async (req, res) => {
         doc.pipe(res);
 
         orders.forEach((order, index) => {
-            
             if (index > 0) doc.addPage();
 
             doc.fontSize(22).text('CS308 GAMING STORE', { align: 'center' });
@@ -124,6 +258,8 @@ router.get('/user/:userId/invoices/download', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+
 router.put('/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
@@ -134,9 +270,9 @@ router.put('/:id/status', async (req, res) => {
     }
 });
 
+
 router.get('/sales/refund-requests', async (req, res) => {
     try {
-        
         const orders = await Order.find({
             $or: [
                 { status: 'Refund Requested' },
@@ -150,38 +286,6 @@ router.get('/sales/refund-requests', async (req, res) => {
 });
 
 
-router.put('/:id/refund-evaluate', async (req, res) => {
-    try {
-        const { action } = req.body; 
-        const order = await Order.findById(req.params.id);
-
-        if (!order) return res.status(404).json({ error: 'Order not found' });
-
-        if (action === 'approve') {
-            order.status = 'Refunded';
-            
-            
-            for (let item of order.items) {
-                if (item.productId) { 
-                    const product = await Product.findById(item.productId);
-                    if (product) {
-                        product.stock += item.quantity;
-                        await product.save();
-                    }
-                }
-            }
-        } else if (action === 'reject') {
-            order.status = 'Refund Rejected';
-        } else {
-            return res.status(400).json({ error: 'Invalid action.' });
-        }
-
-        await order.save();
-        res.json({ message: `Refund successfully ${action}d!`, order });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 router.get('/:id/invoice', async (req, res) => {
     try {
         const order = await Order.findById(req.params.id);
@@ -231,22 +335,18 @@ router.get('/:id/invoice', async (req, res) => {
     }
 });
 
-// REFUND REQUEST (Customer - 30 day limit)
+
 router.post('/:id/refund-request', async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
-
     if (!order) return res.status(404).json({ message: 'Order not found' });
-
     if (order.status !== 'Delivered') {
       return res.status(400).json({ message: 'Only delivered orders can be refunded' });
     }
-
     const daysSince = (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24);
     if (daysSince > 30) {
       return res.status(400).json({ message: 'Refund window has expired (30-day limit)' });
     }
-
     if (order.status === 'Refund Requested') {
       return res.status(400).json({ message: 'Refund already requested for this order' });
     }

@@ -176,13 +176,15 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
           </div>
           {open.stock && (
             <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#374151', cursor: 'pointer', alignItems: 'center' }}>
-              In Stock Only
-              <input
-                type="checkbox"
-                checked={inStockOnly}
-                onChange={(e) => setInStockOnly(e.target.checked)}
-                style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={inStockOnly}
+                  onChange={(e) => setInStockOnly(e.target.checked)}
+                  style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
+                />
+                <span>In Stock Only</span>
+              </div>
             </label>
           )}
         </div>
@@ -193,13 +195,15 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
           </div>
           {open.sale && (
             <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#374151', cursor: 'pointer', alignItems: 'center' }}>
-              On Sale Only
-              <input
-                type="checkbox"
-                checked={onSaleOnly}
-                onChange={(e) => setOnSaleOnly(e.target.checked)}
-                style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={onSaleOnly}
+                  onChange={(e) => setOnSaleOnly(e.target.checked)}
+                  style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
+                />
+                <span>On Sale Only</span>
+              </div>
             </label>
           )}
         </div>
@@ -253,11 +257,11 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                   boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                   border: '1px solid #e5e7eb',
                   transition: 'all 0.2s ease-in-out',
-                  cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
+                  cursor: 'pointer',
                   position: 'relative',
                   display: 'flex',
                   flexDirection: 'column',
-                  opacity: product.stock === 0 ? 0.7 : 1
+                  opacity: product.stock === 0 ? 0.85 : 1
                 }}
                 onMouseEnter={(e) => {
                   if (product.stock !== 0) {
@@ -287,7 +291,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                       width: '100%',
                       height: '100%',
                       objectFit: 'contain',
-                      filter: product.stock === 0 ? 'grayscale(100%)' : 'none'
+                      filter: product.stock === 0 ? 'grayscale(80%)' : 'none'
                     }}
                   />
                   <div
@@ -311,7 +315,7 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                     </svg>
                   </div>
                   {product.stock === 0 && (
-                    <span style={{ position: 'absolute', top: '0', right: '0', background: '#9ca3af', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>SOLD OUT</span>
+                    <span style={{ position: 'absolute', top: '0', right: '0', background: '#dc2626', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>OUT OF STOCK</span>
                   )}
                   {discount > 0 && product.stock !== 0 && (
                     <span style={{ position: 'absolute', top: '0', left: '0', background: '#f33131', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>%{product.discount} OFF</span>
@@ -335,37 +339,83 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                       <span style={{ color: '#111827', fontWeight: '700', fontSize: '18px' }}> ${formatPrice(product.price)} </span>
                     )}
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addToCart({ ...product, finalPrice });
-                      const btn = e.currentTarget;
-                      const originalText = btn.innerText;
-                      btn.innerText = '✓ Added';
-                      btn.style.background = '#10b981';
-                      setTimeout(() => {
-                        btn.innerText = originalText;
-                        btn.style.background = '#111827';
-                      }, 1000);
-                    }}
-                    disabled={product.stock === 0}
-                    style={{
-                      padding: '8px 20px', borderRadius: '6px', border: 'none',
-                      background: product.stock === 0 ? '#f3f4f6' : '#111827',
-                      color: product.stock === 0 ? '#9ca3af' : '#ffffff',
-                      fontWeight: '600', fontSize: '14px', cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {product.stock === 0 ? 'Out' : 'Add'}
-                  </button>
+
+                  {/*  */}
+                  {product.stock === 0 ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        
+                        let email = user?.email;
+                        if (!email) {
+                          email = prompt("Enter your email to get notified when back in stock:");
+                        }
+                        if (!email) return;
+
+                        fetch(`http://localhost:8000/api/products/${product._id}/notify-me`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ email })
+                        })
+                        .then(res => {
+                          if (res.ok) {
+                            alert("🔔 Awesome! We will let you know when it's back in stock.");
+                          } else {
+                            alert("Something went wrong. Please try again.");
+                          }
+                        })
+                        .catch(err => console.error("Error subscribing:", err));
+                      }}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: '#2563eb', 
+                        color: '#ffffff',
+                        fontWeight: '600',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      🔔 Notify Me
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart({ ...product, finalPrice });
+                        const btn = e.currentTarget;
+                        const originalText = btn.innerText;
+                        btn.innerText = '✓ Added';
+                        btn.style.background = '#10b981';
+                        setTimeout(() => {
+                          btn.innerText = originalText;
+                          btn.style.background = '#111827';
+                        }, 1000);
+                      }}
+                      style={{
+                        padding: '8px 20px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: '#111827',
+                        color: '#ffffff',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      Add
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
         {sortedProducts.length === 0 && (
-          <div style={{ textAlign: 'center', marginTop: '60px', color: '#6b7280', fontSize: '16px', backgroundColor: '#ffffff', padding: '40px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ textAlign: 'center', marginTop: '60px', color: '#6b7280', fontSize: '16px', backgroundColor: '#ffffff', padding: '4px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             No products found matching your criteria.
           </div>
         )}
