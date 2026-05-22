@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useCookies } from 'react-cookie'
+import { useCookies } from 'react-cookie';
 import Navbar from './components/Navbar';
 import Shop from './pages/Shop';
 import ProductDetail from './pages/ProductDetail';
@@ -45,7 +45,7 @@ export default function App() {
       }
     }
   }, [cookies]);
-  useEffect(() => { verifySession(); }, [])
+  useEffect(() => { verifySession(); }, []);
 
   const updateWishlistCount = useCallback(async () => {
     if (!user) {
