@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useCookies } from 'react-cookie';
+import { ToastContainer, toast } from 'react-toastify';
+import { io } from 'socket.io-client';
+import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './components/Navbar';
 import Shop from './pages/Shop';
 import ProductDetail from './pages/ProductDetail';
@@ -10,6 +13,8 @@ import Cart from './pages/Cart';
 import MyOrders from './pages/MyOrders';
 import Wishlist from './pages/Wishlist';
 import RefundEvaluation from './pages/Dashboard/RefundEvaluation'; 
+
+const socket = io('http://localhost:8000');
 
 export default function App() {
   const [cookies, setCookie, removeCookie] = useCookies(["sessionToken"]);
@@ -44,8 +49,9 @@ export default function App() {
         console.error(err); 
       }
     }
-  }, [cookies]);
-  useEffect(() => { verifySession(); }, []);
+  }, [cookies, removeCookie]);
+
+  useEffect(() => { verifySession(); }, [verifySession]);
 
   const updateWishlistCount = useCallback(async () => {
     if (!user) {
@@ -76,6 +82,47 @@ export default function App() {
   useEffect(() => { 
     fetchData(); 
   }, [fetchData]);
+
+  useEffect(() => {
+    socket.on('productDiscount', async (data) => {
+      const isInCart = cart.some(item => item._id === data.productId);
+      let isInWishlist = false;
+      if (user) {
+        try {
+          const res = await fetch(`http://localhost:8000/api/wishlist/${user._id}`);
+          const wishlistItems = await res.json();
+          isInWishlist = wishlistItems.some(item => item._id === data.productId || item.productId === data.productId);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      if (isInCart || isInWishlist) {
+        const locationText = isInCart ? "in your Cart" : "in your Wishlist";
+        toast.info(
+          <div style={{ padding: '5px' }}>
+            🎉 <strong>Flash Discount!</strong> <br />
+            The product <strong>{data.productName}</strong> {locationText} is now discounted by <strong>%{data.discountRate}</strong>! <br />
+            <span style={{ fontSize: '15px' }}>New Price: <strong>${data.newPrice}</strong></span>
+          </div>,
+          {
+            position: "top-center",
+            autoClose: 15000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            theme: "colored"
+          }
+        );
+        fetchData();
+      }
+    });
+
+    return () => {
+      socket.off('productDiscount');
+    };
+  }, [cart, user, fetchData]);
 
   const addToCart = (product) => {
     setCart(prevCart => {
@@ -161,7 +208,6 @@ export default function App() {
         wishlistCount={wishlistCount}
       />
 
-      {}
       {isMenuOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '280px', height: '100%', backgroundColor: '#fff', zIndex: 1000, padding: '30px', boxShadow: '5px 0 15px rgba(0,0,0,0.1)' }}>
           <button onClick={() => setIsMenuOpen(false)} style={{ float: 'right', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
@@ -177,7 +223,6 @@ export default function App() {
                 <li onClick={() => { setView('salesManager'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}>
                   Sales Manager Dashboard
                 </li>
-                {}
                 <li onClick={() => { setView('refundEvaluation'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#2563eb', fontWeight: 'bold', borderBottom: '1px solid #eee' }}>
                   Refund Evaluation
                 </li>
@@ -197,7 +242,6 @@ export default function App() {
         </div>
       )}
 
-      {}
       <main style={{ padding: '20px 5%' }}>
         {view === 'shop' && <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} updateWishlistCount={updateWishlistCount} />}
         {view === 'wishlist' && (
@@ -214,19 +258,17 @@ export default function App() {
         {view === 'myOrders' && <MyOrders user={user} setView={setView} products={products} setSelectedProduct={setSelectedProduct} />}
         {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager fetchData={fetchData} products={products} /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} updateWishlistCount={updateWishlistCount} />)}
 
-        {}
-{view === 'refundEvaluation' && (
-  (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin') ? (
-    
-    <RefundEvaluation fetchData={fetchData} />
-  ) : (
-    <div style={{ textAlign: 'center', marginTop: '50px' }}>
-      <h2>Access Denied</h2>
-      <p>You don't have permission to view this page.</p>
-      <button onClick={() => setView('shop')} style={{ padding: '10px 20px', marginTop: '15px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Go Back Home</button>
-    </div>
-  )
-)}
+        {view === 'refundEvaluation' && (
+          (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin') ? (
+            <RefundEvaluation fetchData={fetchData} />
+          ) : (
+            <div style={{ textAlign: 'center', marginTop: '50px' }}>
+              <h2>Access Denied</h2>
+              <p>You don't have permission to view this page.</p>
+              <button onClick={() => setView('shop')} style={{ padding: '10px 20px', marginTop: '15px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Go Back Home</button>
+            </div>
+          )
+        )}
 
         {(view === 'login' || view === 'register') && (
           <AuthCard 
@@ -251,6 +293,8 @@ export default function App() {
           )
         )}
       </main>
+
+      <ToastContainer position="top-center" autoClose={3000} />
     </div>
   );
 }

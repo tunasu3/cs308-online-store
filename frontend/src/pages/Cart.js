@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import io from 'socket.io-client';
+import { toast } from 'react-toastify';
+
+const socket = io('http://localhost:8000');
 
 const formatPrice = (num) => {
   const value = Number(num);
@@ -18,6 +22,28 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
   const [paymentStatus, setPaymentStatus] = useState(null); 
   const [invoiceSending, setInvoiceSending] = useState(false);
   const [invoiceId, setInvoiceId] = useState(null);
+
+  useEffect(() => {
+    socket.on('product-discounted', (data) => {
+      const { productId, productName, discountRate, newPrice } = data;
+      
+      const isItemInCart = cart.some(item => item._id === productId);
+
+      if (isItemInCart) {
+        toast.success(`🎉 Harika Haber! Sepetindeki "${productName}" ürününe %${discountRate} indirim uygulandı!`);
+        
+        setCart(prevCart => 
+          prevCart.map(item => 
+            item._id === productId ? { ...item, price: newPrice, finalPrice: newPrice } : item
+          )
+        );
+      }
+    });
+
+    return () => {
+      socket.off('product-discounted');
+    };
+  }, [cart, setCart]);
 
   const total = cart.reduce(
        (sum, item) => sum + ((item.finalPrice !== undefined ? item.finalPrice : item.price) * item.qty),

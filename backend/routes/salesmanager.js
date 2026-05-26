@@ -3,13 +3,10 @@ const router = express.Router();
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 
-
-// APPLY DISCOUNT
 router.put('/discount/:id', async (req, res) => {
     try {
         const { discount } = req.body;
 
-        // Validation
         if (discount === undefined) {
             return res.status(400).json({ message: "Discount is required" });
         }
@@ -27,6 +24,16 @@ router.put('/discount/:id', async (req, res) => {
         product.discount = discount;
         await product.save();
 
+        if (req.app && req.app.get('io') && discount > 0) {
+            const calculatedNewPrice = product.price * (1 - discount / 100);
+            req.app.get('io').emit('productDiscount', {
+                productId: product._id,
+                productName: product.name,
+                newPrice: calculatedNewPrice.toFixed(2),
+                discountRate: discount
+            });
+        }
+
         res.json({
             message: "Discount applied successfully",
             product
@@ -37,13 +44,10 @@ router.put('/discount/:id', async (req, res) => {
     }
 });
 
-
-//REVENUE ANALYTICS
 router.get('/revenue', async (req, res) => {
     try {
         const { start, end } = req.query;
 
-        // Validation
         if (!start || !end) {
             return res.status(400).json({
                 message: "Start and end dates are required"
@@ -53,10 +57,8 @@ router.get('/revenue', async (req, res) => {
         const startDate = new Date(start);
         const endDate = new Date(end);
 
-    
         endDate.setHours(23, 59, 59, 999);
 
-        // Aggregation
         const result = await Order.aggregate([
             {
                 $match: {
@@ -86,7 +88,6 @@ router.get('/revenue', async (req, res) => {
             }
         ]);
 
-        // Format labels 
         const labels = result.map(r =>
             `${r._id.year}-${String(r._id.month).padStart(2, '0')}-${String(r._id.day).padStart(2, '0')}`
         );
@@ -96,7 +97,6 @@ router.get('/revenue', async (req, res) => {
 
         const totalRevenue = data.reduce((a, b) => a + b, 0);
 
-        
         if (labels.length === 0) {
             return res.json({
                 totalRevenue: 0,
@@ -118,7 +118,6 @@ router.get('/revenue', async (req, res) => {
     }
 });
 
-// GET ALL ORDERS (Delivery List)
 router.get('/orders', async (req, res) => {
     try {
         const orders = await Order.find().sort({ createdAt: -1 });
@@ -128,7 +127,6 @@ router.get('/orders', async (req, res) => {
     }
 });
 
-// UPDATE ORDER STATUS
 router.put('/orders/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
@@ -163,7 +161,6 @@ router.put('/orders/:id/status', async (req, res) => {
     }
 });
 
-// PROFIT/LOSS ANALYTICS
 router.get('/profit-loss', async (req, res) => {
     try {
         const { start, end } = req.query;

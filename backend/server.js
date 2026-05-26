@@ -1,7 +1,11 @@
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
+
 console.log('MONGO_URI loaded:', process.env.MONGO_URI ? 'YES' : 'NO');
+
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err.message);
 });
@@ -9,12 +13,27 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (err) => {
     console.error('Unhandled Rejection:', err?.message || err);
 });
+
 const connectDB = require('./config/db');
 const salesManagerRoutes = require('./routes/salesmanager');
 const app = express();
 const wishlistRoutes = require('./routes/wishlist');
 const PDFDocument = require('pdfkit');
 const nodemailer = require('nodemailer');
+
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: ['http://localhost:3000', 'http://localhost:3001'],
+        credentials: true
+    }
+});
+
+app.set('io', io);
+
+io.on('connection', (socket) => {
+    socket.on('disconnect', () => {});
+});
 
 app.use(cors({
     origin: ['http://localhost:3000', 'http://localhost:3001'],
@@ -24,6 +43,7 @@ app.use(cors({
 app.use(express.json());
 
 connectDB();
+
 const transporter = nodemailer.createTransport({
     host: "smtp.mailgun.org",
     port: "587",
@@ -32,7 +52,7 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     }
-})
+});
 
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
@@ -75,7 +95,18 @@ app.put('/api/orders/:id', async (req, res) => {
 
 app.put('/api/admin/update-product/:id', async (req, res) => {
     try {
-        await Product.findByIdAndUpdate(req.params.id, req.body);
+        const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        
+        if (req.body.price || req.body.discountRate) {
+            const socketIo = req.app.get('io');
+            socketIo.emit('product-discounted', {
+                productId: updatedProduct._id,
+                productName: updatedProduct.name,
+                discountRate: updatedProduct.discountRate || 0,
+                newPrice: updatedProduct.price
+            });
+        }
+        
         res.json({ message: "Updated" });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -88,13 +119,6 @@ app.post('/api/orders/mail-invoice/:id', async (req, res) => {
         if (!order) return res.status(404).json({ error: 'Order not found' });
 
         const doc = new PDFDocument({ margin: 50 });
-
-        /* try {
-            await transporter.verify();
-            console.log("Server is ready to take our messages");
-        } catch (err) {
-            console.log(err);
-        } */
 
         doc.fontSize(24).text('CS308 GAMING STORE', { align: 'center' });
         doc.fontSize(12).fillColor('#666').text('Invoice', { align: 'center' });
@@ -131,7 +155,7 @@ app.post('/api/orders/mail-invoice/:id', async (req, res) => {
 
         doc.end();
 
-        const info = transporter.sendMail({
+        await transporter.sendMail({
             from: '"CS308 Online Store" <ccs308-online-store@sandbox37580d67384143948170a80a4bbb4c32.mailgun.org>',
             to: `"${order.userName}" <${order.userEmail}>`,
             subject: "Your Invoice",
@@ -153,6 +177,6 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server running on port ${PORT} `);
 });
