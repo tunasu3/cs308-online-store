@@ -24,26 +24,38 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
   const [invoiceId, setInvoiceId] = useState(null);
 
   useEffect(() => {
-    socket.on('product-discounted', (data) => {
-      const { productId, productName, discountRate, newPrice } = data;
+    const handleDiscount = (data) => {
+      const productId = data.productId || data._id;
+      const newPrice = data.newPrice || data.price;
       
-      const isItemInCart = cart.some(item => item._id === productId);
+      const isItemInCart = cart.some(item => item._id === productId || item.productId === productId);
 
       if (isItemInCart) {
-        toast.success(`🎉 Harika Haber! Sepetindeki "${productName}" ürününe %${discountRate} indirim uygulandı!`);
-        
-        setCart(prevCart => 
-          prevCart.map(item => 
-            item._id === productId ? { ...item, price: newPrice, finalPrice: newPrice } : item
-          )
-        );
+        setCart(prevCart => {
+          const updatedCart = prevCart.map(item => {
+            if (item._id === productId || item.productId === productId) {
+              return { ...item, price: newPrice, finalPrice: newPrice };
+            }
+            return item;
+          });
+          localStorage.setItem('cart', JSON.stringify(updatedCart));
+          return updatedCart;
+        });
+
+        if (fetchData) {
+          fetchData();
+        }
       }
-    });
+    };
+
+    socket.on('product-discounted', handleDiscount);
+    socket.on('flash_discount', handleDiscount);
 
     return () => {
-      socket.off('product-discounted');
+      socket.off('product-discounted', handleDiscount);
+      socket.off('flash_discount', handleDiscount);
     };
-  }, [cart, setCart]);
+  }, [cart, setCart, fetchData]);
 
   const total = cart.reduce(
        (sum, item) => sum + ((item.finalPrice !== undefined ? item.finalPrice : item.price) * item.qty),
@@ -51,7 +63,9 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
     );
   
   const removeItem = (id) => {
-    setCart(cart.filter(item => item._id !== id));
+    const updatedCart = cart.filter(item => item._id !== id && item.productId !== id);
+    setCart(updatedCart);
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
   };
 
   const updateQty = (id, newQty) => {
@@ -59,9 +73,11 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
       removeItem(id);
       return;
     }
-    setCart(cart.map(item => 
-      item._id === id ? { ...item, qty: newQty } : item
-    ));
+    const updatedCart = cart.map(item => 
+      (item._id === id || item.productId === id) ? { ...item, qty: newQty } : item
+    );
+    setCart(updatedCart);
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
   };
 
   useEffect(() => {
@@ -85,9 +101,9 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
               userName: user.fullName || checkoutData.name,
               userEmail: user.email || '',
               items: cart.map(item => ({
-                productId: item._id,
+                productId: item._id || item.productId,
                 name: item.name,
-                price: item.price,
+                price: item.finalPrice !== undefined ? item.finalPrice : item.price,
                 quantity: item.qty
               })),
               totalPrice: total,
@@ -116,7 +132,7 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
   const handleFinishShopping = async () => {
     setInvoiceSending(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/orders/mail-invoice/${invoiceId}`, {
+      await fetch(`http://localhost:8000/api/orders/mail-invoice/${invoiceId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
@@ -126,6 +142,7 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
     }
 
     setCart([]);
+    localStorage.removeItem('cart');
     setShowCheckout(false);
     setView('shop');
     setInvoiceSending(false);
@@ -199,7 +216,7 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {cart.map(item => (
-              <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div key={item._id || item.productId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '20px' }}>
                   {item.image && (
                     <img src={item.image} alt={item.name} style={{ width: '60px', height: '60px', objectFit: 'contain' }} />
@@ -213,14 +230,14 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginRight: '40px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden' }}>
                     <button 
-                      onClick={() => updateQty(item._id, item.qty - 1)}
+                      onClick={() => updateQty(item._id || item.productId, item.qty - 1)}
                       style={{ width: '36px', height: '36px', border: 'none', backgroundColor: '#f9fafb', cursor: 'pointer', color: '#374151', fontSize: '16px', borderRight: '1px solid #e5e7eb' }}
                     >
                       −
                     </button>
                     <span style={{ width: '40px', textAlign: 'center', fontWeight: '500', color: '#111827' }}>{item.qty}</span>
                     <button 
-                      onClick={() => updateQty(item._id, item.qty + 1)}
+                      onClick={() => updateQty(item._id || item.productId, item.qty + 1)}
                       style={{ width: '36px', height: '36px', border: 'none', backgroundColor: '#f9fafb', cursor: 'pointer', color: '#374151', fontSize: '16px', borderLeft: '1px solid #e5e7eb' }}
                     >
                       +
@@ -233,7 +250,7 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
                     ${formatPrice((item.finalPrice !== undefined ? item.finalPrice : item.price) * item.qty)}
                   </span>
                   <button 
-                    onClick={() => removeItem(item._id)}
+                    onClick={() => removeItem(item._id || item.productId)}
                     style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: '500', padding: '8px' }}
                   >
                     Remove

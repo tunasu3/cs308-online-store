@@ -22,7 +22,12 @@ export default function App() {
   const [view, setView] = useState('shop');
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [cart, setCart] = useState([]);
+  
+  const [cart, setCart] = useState(() => {
+    const savedCart = localStorage.getItem('cart');
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
+
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -84,26 +89,44 @@ export default function App() {
   }, [fetchData]);
 
   useEffect(() => {
-    socket.on('productDiscount', async (data) => {
-      const isInCart = cart.some(item => item._id === data.productId);
+    const handleIncomingDiscount = async (data) => {
+      const targetProductId = data.productId || data._id;
+      const newPrice = data.newPrice || data.price;
+      const discountRate = data.discountRate || data.discount;
+
+      const isInCart = cart.some(item => item._id === targetProductId || item.productId === targetProductId);
       let isInWishlist = false;
+
       if (user) {
         try {
           const res = await fetch(`http://localhost:8000/api/wishlist/${user._id}`);
           const wishlistItems = await res.json();
-          isInWishlist = wishlistItems.some(item => item._id === data.productId || item.productId === data.productId);
+          isInWishlist = wishlistItems.some(item => item._id === targetProductId || item.productId === targetProductId);
         } catch (err) {
           console.error(err);
         }
       }
 
       if (isInCart || isInWishlist) {
+        if (isInCart) {
+          setCart(prevCart => {
+            const updated = prevCart.map(item => {
+              if (item._id === targetProductId || item.productId === targetProductId) {
+                return { ...item, price: newPrice, finalPrice: newPrice };
+              }
+              return item;
+            });
+            localStorage.setItem('cart', JSON.stringify(updated));
+            return updated;
+          });
+        }
+
         const locationText = isInCart ? "in your Cart" : "in your Wishlist";
         toast.info(
           <div style={{ padding: '5px' }}>
             🎉 <strong>Flash Discount!</strong> <br />
-            The product <strong>{data.productName}</strong> {locationText} is now discounted by <strong>%{data.discountRate}</strong>! <br />
-            <span style={{ fontSize: '15px' }}>New Price: <strong>${data.newPrice}</strong></span>
+            The product <strong>{data.productName || data.name || 'Product'}</strong> {locationText} is now discounted by <strong>%{discountRate}</strong>! <br />
+            <span style={{ fontSize: '15px' }}>New Price: <strong>${newPrice}</strong></span>
           </div>,
           {
             position: "top-center",
@@ -117,22 +140,32 @@ export default function App() {
         );
         fetchData();
       }
-    });
+    };
+
+    socket.on('productDiscount', handleIncomingDiscount);
+    socket.on('product-discounted', handleIncomingDiscount);
+    socket.on('flash_discount', handleIncomingDiscount);
 
     return () => {
-      socket.off('productDiscount');
+      socket.off('productDiscount', handleIncomingDiscount);
+      socket.off('product-discounted', handleIncomingDiscount);
+      socket.off('flash_discount', handleIncomingDiscount);
     };
   }, [cart, user, fetchData]);
 
   const addToCart = (product) => {
     setCart(prevCart => {
-      const existing = prevCart.find(item => item._id === product._id);
+      const existing = prevCart.find(item => item._id === product._id || item.productId === product._id);
+      let updated;
       if (existing) {
-        return prevCart.map(item =>
-          item._id === product._id ? { ...item, qty: item.qty + 1 } : item
+        updated = prevCart.map(item =>
+          (item._id === product._id || item.productId === product._id) ? { ...item, qty: item.qty + 1 } : item
         );
+      } else {
+        updated = [...prevCart, { ...product, qty: 1 }];
       }
-      return [...prevCart, { ...product, qty: 1 }];
+      localStorage.setItem('cart', JSON.stringify(updated));
+      return updated;
     });
   };
 
