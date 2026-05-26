@@ -180,6 +180,14 @@ function SalesManager({ fetchData, products }) {
     }
   };
 
+  const downloadBulkInvoices = () => {
+    if (!invoiceStart || !invoiceEnd) {
+      alert("Please select start and end dates for invoices");
+      return;
+    }
+    window.open(`http://localhost:8000/api/orders/invoices/bulk?startDate=${invoiceStart}&endDate=${invoiceEnd}`, "_blank");
+  };
+
   const downloadInvoicePDF = (id) => {
     window.open(`http://localhost:8000/api/orders/${id}/invoice`, "_blank");
   };
@@ -269,8 +277,6 @@ function SalesManager({ fetchData, products }) {
       year: "numeric",
     });
   };
-
-  const currentSelectedProduct = products.find((p) => p._id === selectedProduct);
 
   return (
     <div
@@ -436,6 +442,9 @@ function SalesManager({ fetchData, products }) {
             <input type="date" style={inputStyle} onChange={(e) => setInvoiceEnd(e.target.value)} />
             <button onClick={getInvoices} style={{ padding: "8px 14px", background: "#2c3e50", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}>
               View Invoices
+            </button>
+            <button onClick={downloadBulkInvoices} style={{ padding: "8px 14px", background: "#10b981", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "500" }}>
+              Download All Invoices
             </button>
           </div>
 

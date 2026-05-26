@@ -163,7 +163,81 @@ router.put('/:id/refund-evaluate', async (req, res) => {
     }
 });
 
+router.get('/invoices/bulk', async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        let query = {};
 
+       
+        if (startDate && endDate && startDate !== '' && endDate !== '' && startDate !== 'undefined') {
+            query.createdAt = {
+                $gte: new Date(new Date(startDate).setHours(0, 0, 0, 0)),
+                $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+            };
+        }
+
+        
+        const orders = await Order.find(query).sort({ createdAt: -1 });
+
+        if (!orders || orders.length === 0) {
+            return res.status(404).send('No orders found in this date range to download.');
+        }
+
+       
+        const doc = new PDFDocument({ margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        
+        
+        const fileName = startDate && endDate 
+            ? `bulk-invoices-${startDate}-to-${endDate}.pdf` 
+            : `all-invoices.pdf`;
+            
+        res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+        doc.pipe(res);
+
+        
+        orders.forEach((order, index) => {
+            if (index > 0) doc.addPage();
+
+            doc.fontSize(22).text('CS308 GAMING STORE', { align: 'center' });
+            doc.fontSize(12).fillColor('#666').text('Official Bulk Invoice', { align: 'center' });
+            doc.moveDown();
+            doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+            doc.moveDown();
+
+            doc.fontSize(12).fillColor('#000');
+            doc.text(`Invoice ID: ${order._id}`);
+            doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
+            doc.text(`Customer: ${order.userName}`);
+            doc.text(`Email: ${order.userEmail}`);
+            doc.text(`Delivery Address: ${order.deliveryAddress}`);
+            doc.text(`Status: ${order.status}`);
+            doc.moveDown();
+
+            doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+            doc.moveDown();
+            doc.fontSize(14).text('Items:', { underline: true });
+            doc.moveDown(0.5);
+
+            order.items.forEach(item => {
+                doc.fontSize(12).text(
+                    `${item.name} x${item.quantity}  —  ${(item.price * item.quantity).toLocaleString()} TL`
+                );
+            });
+
+            doc.moveDown();
+            doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+            doc.moveDown();
+            doc.fontSize(16).text(`TOTAL: ${order.totalPrice.toLocaleString()} TL`, { align: 'right' });
+            doc.moveDown(2);
+            doc.fontSize(10).fillColor('#999').text(`Page ${index + 1} of ${orders.length} - CS308 Gaming Store Manager Export`, { align: 'center' });
+        });
+
+        doc.end();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 router.get('/', async (req, res) => {
     try {
         const orders = await Order.find().sort({ createdAt: -1 });

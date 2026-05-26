@@ -16,6 +16,11 @@ export default function InvoiceManager() {
         }
     };
 
+    const handleBulkDownload = () => {
+        if (!startDate || !endDate) return alert("Select both dates!");
+        window.open(`http://localhost:5000/api/invoices/bulk?startDate=${startDate}&endDate=${endDate}`, '_blank');
+    };
+
     return (
         <div style={{ padding: '20px', background: '#fff', borderRadius: '8px' }}>
             <h3>Invoice Range Viewer (Sales Manager Task)</h3>
@@ -24,6 +29,9 @@ export default function InvoiceManager() {
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
                 <button onClick={handleSearch} style={{ backgroundColor: '#4f46e5', color: '#fff', padding: '5px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                     Filter Invoices
+                </button>
+                <button onClick={handleBulkDownload} style={{ backgroundColor: '#10b981', color: '#fff', padding: '5px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                    Download All Invoices
                 </button>
             </div>
 
