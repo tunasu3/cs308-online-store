@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Line } from "react-chartjs-2";
 import {
@@ -39,6 +39,14 @@ function SalesManager({ fetchData, products }) {
   const [invoices, setInvoices] = useState([]);
   const [invoiceStart, setInvoiceStart] = useState("");
   const [invoiceEnd, setInvoiceEnd] = useState("");
+
+   
+  const [localProducts, setLocalProducts] = useState(products);
+
+  
+  useEffect(() => {
+    setLocalProducts(products);
+  }, [products]);
 
   const updatePrice = async () => {
     if (!selectedProduct) {
@@ -83,7 +91,7 @@ function SalesManager({ fetchData, products }) {
       alert("Enter a valid discount (1–100)");
       return;
     }
-    const selectedProductData = products.find((p) => p._id === selectedProduct);
+    const selectedProductData = localProducts.find((p) => p._id === selectedProduct);
     if (selectedProductData && selectedProductData.stock === 0) {
       alert("Cannot apply a discount to a sold out product");
       return;
@@ -95,7 +103,7 @@ function SalesManager({ fetchData, products }) {
       );
       const flags = JSON.parse(localStorage.getItem("wishlist_flags") || "{}");
       const prevDiscount = Number(
-        products.find((p) => p._id === selectedProduct)?.discount || 0
+        localProducts.find((p) => p._id === selectedProduct)?.discount || 0
       );
       const newDiscountValue = Number(discount);
       if (newDiscountValue > prevDiscount) {
@@ -104,6 +112,7 @@ function SalesManager({ fetchData, products }) {
         localStorage.setItem("wishlist_seen", "false");
       }
       await fetchData();
+      setDiscount("");
       alert("Discount applied!");
     } catch (err) {
       alert("Error applying discount");
@@ -313,11 +322,16 @@ function SalesManager({ fetchData, products }) {
             }}
           >
             <option value="">-- Choose Product --</option>
-            {products.map((p) => (
-              <option key={p._id} value={p._id}>
-                {p.name} (Current Price: ${p.price})
-              </option>
-            ))}
+            {localProducts.map((p) => {
+              const currentPrice = p.discount > 0 
+                ? (p.price * (1 - p.discount / 100)).toFixed(2) 
+                : p.price;
+              return (
+                <option key={p._id} value={p._id}>
+                  {p.name} (Current Price: ${currentPrice})
+                </option>
+              );
+            })}
           </select>
         </div>
 
@@ -392,7 +406,7 @@ function SalesManager({ fetchData, products }) {
 
         <div style={{ marginTop: "30px" }}>
           <h3>Discounted Products</h3>
-          {products.filter((p) => p.discount > 0).length === 0 ? (
+          {localProducts.filter((p) => p.discount > 0).length === 0 ? (
             <p style={{ color: "#777" }}>No discounted products</p>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
@@ -405,7 +419,7 @@ function SalesManager({ fetchData, products }) {
                 </tr>
               </thead>
               <tbody>
-                {products.filter((p) => p.discount > 0).map((p) => (
+                {localProducts.filter((p) => p.discount > 0).map((p) => (
                   <tr key={p._id} style={{ borderBottom: "1px solid #f0f0f0" }}>
                     <td style={{ padding: "10px" }}>{p.name}</td>
                     <td style={{ padding: "10px" }}>${p.price}</td>
