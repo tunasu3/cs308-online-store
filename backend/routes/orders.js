@@ -337,7 +337,7 @@ router.get('/user/:userId/invoices/download', async (req, res) => {
 router.put('/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
-        const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+        const order = await Order.findByIdAndUpdate(req.params.id, { status }, { returnDocument: 'after' }); // <-- { new: true } yerine returnDocument yazdık
         res.json(order);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -462,6 +462,42 @@ router.put('/:id/cancel', async (req, res) => {
         }
 
         res.json({ message: 'Order cancelled successfully and stocks reverted.', order });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+router.patch('/:orderId/items/:itemId', async (req, res) => {
+    try {
+        const { orderId, itemId } = req.params;
+        const { itemStatus } = req.body;
+
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const item = order.items.id(itemId);
+        if (!item) {
+            return res.status(404).json({ error: 'Item not found in this order' });
+        }
+
+        item.itemStatus = itemStatus;
+
+        const statuses = order.items.map(i => i.itemStatus || 'Processing');
+        const allSame = statuses.every(s => s === statuses[0]);
+
+        if (allSame) {
+            order.status = statuses[0];
+        } else if (statuses.includes('Processing')) {
+            order.status = 'Processing';
+        } else if (statuses.includes('In-Transit')) {
+            order.status = 'In-Transit';
+        } else {
+            order.status = 'Delivered'; 
+        }
+
+        await order.save();
+        res.json({ message: 'Item and global status updated successfully', order });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

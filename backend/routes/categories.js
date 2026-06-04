@@ -2,11 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Category = require('../models/Category'); 
 
-
 router.get('/', async (req, res) => {
     try {
         const categories = await Category.find();
-        
         
         if (categories.length === 0) {
             const defaultCategories = [
@@ -24,7 +22,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-
 router.post('/', async (req, res) => {
     try {
         const { name } = req.body;
@@ -34,7 +31,6 @@ router.post('/', async (req, res) => {
 
         const trimmedName = String(name).trim();
 
-       
         const existingCategory = await Category.findOne({ 
             name: { $regex: new RegExp(`^${trimmedName}$`, 'i') } 
         });
@@ -43,11 +39,56 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'This category already exists' });
         }
 
-        
         const newCategory = new Category({ name: trimmedName });
         const savedCategory = await newCategory.save();
         
         res.status(201).json(savedCategory);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.put('/:id', async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name) {
+            return res.status(400).json({ error: 'Category name is required' });
+        }
+
+        const trimmedName = String(name).trim();
+
+        const existingCategory = await Category.findOne({ 
+            _id: { $ne: req.params.id },
+            name: { $regex: new RegExp(`^${trimmedName}$`, 'i') } 
+        });
+
+        if (existingCategory) {
+            return res.status(400).json({ error: 'Another category with this name already exists' });
+        }
+
+        const updatedCategory = await Category.findByIdAndUpdate(
+            req.params.id,
+            { name: trimmedName },
+            { new: true }
+        );
+
+        if (!updatedCategory) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+
+        res.json(updatedCategory);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.delete('/:id', async (req, res) => {
+    try {
+        const deletedCategory = await Category.findByIdAndDelete(req.params.id);
+        if (!deletedCategory) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+        res.json({ message: 'Category deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

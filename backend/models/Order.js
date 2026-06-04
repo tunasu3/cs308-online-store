@@ -8,12 +8,17 @@ const OrderSchema = new mongoose.Schema({
         productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
         name: String,
         price: Number,
-        quantity: Number
+        quantity: Number,
+        itemStatus: {
+            type: String,
+            enum: ['Processing', 'In-Transit', 'Delivered', 'Refund Requested', 'Refunded', 'Refund Rejected', 'Cancelled'],
+            default: 'Processing'
+        }
     }],
     totalPrice: { type: Number, required: true },
     status: {
         type: String,
-        enum: ['Processing', 'In-Transit', 'Delivered', 'Refund Requested', 'Refunded', 'Refund Rejected','Cancelled'],
+        enum: ['Processing', 'Partially Shipped', 'In-Transit', 'Delivered', 'Refund Requested', 'Refunded', 'Refund Rejected', 'Cancelled'],
         default: 'Processing'
     },
     deliveryAddress: { type: String, default: '' },
