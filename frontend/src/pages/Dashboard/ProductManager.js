@@ -281,7 +281,38 @@ export default function ProductManager({ products, categories = [], fetchData, d
           </div>
         )}
 
-{activeTab === 'deliveries' && (
+        {activeTab === 'categories' && (
+          <div style={{ maxWidth: '500px' }}>
+            <form onSubmit={handleAddCategory} style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
+              <input type="text" placeholder={editingCategoryId ? "Edit Category Name" : "New Category Name"} required value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value})} style={inputStyle} />
+              <button type="submit" style={{ padding: '10px 24px', backgroundColor: editingCategoryId ? '#10b981' : '#1e3a8a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', minWidth: '90px' }}>
+                {editingCategoryId ? 'Update' : 'Add'}
+              </button>
+              {editingCategoryId && (
+                <button type="button" onClick={cancelCategoryEdit} style={{ padding: '10px 24px', backgroundColor: '#64748b', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
+                  Cancel
+                </button>
+              )}
+            </form>
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {categories && categories.length > 0 && categories.map(c => (
+                <li key={c._id || c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', border: '1px solid #e2e8f0', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#f8fafc' }}>
+                  <span style={{ fontWeight: '500', color: '#334155' }}>{c.name}</span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button type="button" onClick={() => startCategoryEdit(c)} style={{ color: '#2563eb', background: '#eff6ff', border: 'none', cursor: 'pointer', fontWeight: '600', padding: '6px 12px', borderRadius: '6px', fontSize: '13px' }}>
+                      Edit
+                    </button>
+                    <button type="button" onClick={() => handleDeleteCategory(c._id)} style={{ color: '#dc2626', background: '#fef2f2', border: 'none', cursor: 'pointer', fontWeight: '600', padding: '6px 12px', borderRadius: '6px', fontSize: '13px' }}>
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {activeTab === 'deliveries' && (
           <div>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
               <thead>
@@ -304,7 +335,6 @@ export default function ProductManager({ products, categories = [], fetchData, d
                     </td>
                     <td style={{ padding: '15px', minWidth: '320px' }}>
                       {order.items && order.items.map((item, idx) => {
-                        // Otomatik durumları yakalıyoruz
                         const isTerminalStatus = ['Cancelled', 'Refund Requested', 'Refunded', 'Refund Rejected'].includes(item.itemStatus);
                         
                         return (
@@ -313,7 +343,6 @@ export default function ProductManager({ products, categories = [], fetchData, d
                               {item.name} x<strong style={{ color: '#2563eb' }}>{item.quantity}</strong>
                             </span>
                             
-                            {/* Akıllı Rozet veya Dropdown */}
                             {isTerminalStatus ? (
                               <span style={{
                                 padding: '4px 10px',
@@ -354,7 +383,6 @@ export default function ProductManager({ products, categories = [], fetchData, d
                     <td style={{ padding: '15px', fontWeight: '600', color: '#0f172a', paddingTop: '20px' }}>${order.totalPrice || order.totalAmount}</td>
                     <td style={{ padding: '15px', color: '#475569', maxWidth: '180px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingTop: '20px' }}>{order.deliveryAddress}</td>
                     
-                    {/* View Invoice Butonu (Yanındaki genel statü kaldırıldı) */}
                     <td style={{ padding: '15px', textAlign: 'right', paddingTop: '20px' }}>
                       <button onClick={() => handleViewInvoice(order._id)} style={{ padding: '6px 12px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px' }}>
                         View
