@@ -5,10 +5,10 @@ export default function ProductManager({ products, categories = [], fetchData, d
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
 
- 
   const [newProduct, setNewProduct] = useState({ name: '', stock: '', category: '', description: '' });
   const [newCategory, setNewCategory] = useState({ name: '' });
   const [editingId, setEditingId] = useState(null);
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
 
   const fetchOrders = async () => {
     try {
@@ -43,7 +43,6 @@ export default function ProductManager({ products, categories = [], fetchData, d
         : 'http://localhost:8000/api/products';
       const method = editingId ? 'PUT' : 'POST';
 
-      
       const payload = { ...newProduct };
       if (!editingId) {
         payload.price = 0; 
@@ -66,7 +65,7 @@ export default function ProductManager({ products, categories = [], fetchData, d
       fetchData();
       setNewProduct({ name: '', stock: '', category: '', description: '' });
       setEditingId(null);
-    } catch (err) { console.error(err); }
+    } catch (err) {}
   };
 
   const startEdit = (p) => {
@@ -88,22 +87,50 @@ export default function ProductManager({ products, categories = [], fetchData, d
   const handleAddCategory = async (e) => {
     e.preventDefault();
     try {
-      await fetch('http://localhost:8000/api/categories', {
-        method: 'POST',
+      const url = editingCategoryId 
+        ? `http://localhost:8000/api/categories/${editingCategoryId}` 
+        : 'http://localhost:8000/api/categories';
+      const method = editingCategoryId ? 'PUT' : 'POST';
+
+      await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCategory)
       });
       fetchData();
       setNewCategory({ name: '' });
+      setEditingCategoryId(null);
     } catch (err) {}
   };
 
-  const updateOrderStatus = async (id, newStatus) => {
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this category?")) return;
     try {
-      const res = await fetch(`http://localhost:8000/api/orders/${id}`, {
-        method: 'PUT',
+      const res = await fetch(`http://localhost:8000/api/categories/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        if (fetchData) fetchData();
+      }
+    } catch (err) {}
+  };
+
+  const startCategoryEdit = (c) => {
+    setEditingCategoryId(c._id);
+    setNewCategory({ name: c.name || '' });
+  };
+
+  const cancelCategoryEdit = () => {
+    setEditingCategoryId(null);
+    setNewCategory({ name: '' });
+  };
+
+  const updateItemStatus = async (orderId, itemId, newStatus) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/orders/${orderId}/items/${itemId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ itemStatus: newStatus })
       });
       if (res.ok) {
         fetchOrders();
@@ -169,7 +196,6 @@ export default function ProductManager({ products, categories = [], fetchData, d
   return (
     <div style={{ maxWidth: '1200px', margin: '30px auto', backgroundColor: '#fff', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', overflow: 'hidden', fontFamily: 'system-ui, sans-serif' }}>
       
-      {/*  */}
       <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb', backgroundColor: '#f8fafc' }}>
         <button style={tabStyle('products')} onClick={() => setActiveTab('products')}>Products & Stock</button>
         <button style={tabStyle('categories')} onClick={() => setActiveTab('categories')}>Categories</button>
@@ -179,16 +205,13 @@ export default function ProductManager({ products, categories = [], fetchData, d
 
       <div style={{ padding: '35px' }}>
         
-        {/*  */}
         {activeTab === 'products' && (
           <div>
-            {/*  */}
             <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '40px', backgroundColor: '#f8fafc', padding: '25px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
               <h3 style={{ margin: '0 0 5px 0', color: '#1e293b', fontSize: '16px', fontWeight: '600' }}>
                 {editingId ? '📝 Edit Product Details' : '✨ Publish New Product'}
               </h3>
               
-              {/*  */}
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.2fr', gap: '15px' }}>
                 <input type="text" placeholder="Product Name" required value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} style={inputStyle} />
                 <input type="number" placeholder="Stock Qty" required value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} style={inputStyle} />
@@ -213,7 +236,6 @@ export default function ProductManager({ products, categories = [], fetchData, d
               </div>
             </form>
 
-            {/* */}
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #edf2f7', color: '#64748b', fontSize: '14px' }}>
@@ -231,7 +253,6 @@ export default function ProductManager({ products, categories = [], fetchData, d
                       <div style={{ fontWeight: '600', color: '#0f172a', marginBottom: '4px' }}>{p.name}</div>
                       <div style={{ fontSize: '13px', color: '#64748b', maxWidth: '350px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.description || 'No description available.'}</div>
                     </td>
-                    {/* Fiyat alanı duruyor ancak Product Manager değiştiremez mesajı içeriyor */}
                     <td style={{ padding: '16px', fontWeight: '600', color: '#334155' }}>
                       {p.price === 0 ? (
                         <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'normal', fontStyle: 'italic' }}>⚠️ Price Not Set</span>
@@ -260,67 +281,81 @@ export default function ProductManager({ products, categories = [], fetchData, d
           </div>
         )}
 
-        {/*  */}
-        {activeTab === 'categories' && (
-          <div style={{ maxWidth: '500px' }}>
-            <form onSubmit={handleAddCategory} style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
-              <input type="text" placeholder="New Category Name" required value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value})} style={inputStyle} />
-              <button type="submit" style={{ padding: '10px 24px', backgroundColor: '#1e3a8a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>Add</button>
-            </form>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              {categories && categories.length > 0 && categories.map(c => (
-                <li key={c._id || c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', border: '1px solid #e2e8f0', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#f8fafc' }}>
-                  <span style={{ fontWeight: '500', color: '#334155' }}>{c.name}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/*  */}
-        {activeTab === 'deliveries' && (
+{activeTab === 'deliveries' && (
           <div>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #edf2f7', color: '#64748b' }}>
                   <th style={{ padding: '15px' }}>Delivery ID</th>
                   <th style={{ padding: '15px' }}>Customer Details</th>
-                  <th style={{ padding: '15px' }}>Products</th>
+                  <th style={{ padding: '15px' }}>Products & Item Delivery Status</th>
                   <th style={{ padding: '15px' }}>Total Price</th>
                   <th style={{ padding: '15px' }}>Address</th>
-                  <th style={{ padding: '15px' }}>Status</th>
                   <th style={{ padding: '15px', textAlign: 'right' }}>Invoice</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map(order => (
-                  <tr key={order._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '15px', fontFamily: 'monospace', fontSize: '12px', color: '#64748b' }}>#{order._id.substring(0,8)}...</td>
-                    <td style={{ padding: '15px' }}>
+                  <tr key={order._id} style={{ borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' }}>
+                    <td style={{ padding: '15px', fontFamily: 'monospace', fontSize: '12px', color: '#64748b', paddingTop: '20px' }}>#{order._id.substring(0,8)}...</td>
+                    <td style={{ padding: '15px', paddingTop: '20px' }}>
                       <div style={{ fontWeight: '600', color: '#0f172a' }}>{order.userName || 'Guest'}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>{order.userEmail}</div>
                     </td>
-                    <td style={{ padding: '15px' }}>
-                      {order.items && order.items.map((item, idx) => (
-                        <div key={idx} style={{ marginBottom: '4px', fontSize: '13px' }}>
-                          <span style={{ fontWeight: '500', color: '#334155' }}>{item.name}</span> x<strong style={{ color: '#2563eb' }}>{item.quantity}</strong>
-                        </div>
-                      ))}
+                    <td style={{ padding: '15px', minWidth: '320px' }}>
+                      {order.items && order.items.map((item, idx) => {
+                        // Otomatik durumları yakalıyoruz
+                        const isTerminalStatus = ['Cancelled', 'Refund Requested', 'Refunded', 'Refund Rejected'].includes(item.itemStatus);
+                        
+                        return (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px dashed #f1f5f9', gap: '15px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: '500', color: '#334155' }}>
+                              {item.name} x<strong style={{ color: '#2563eb' }}>{item.quantity}</strong>
+                            </span>
+                            
+                            {/* Akıllı Rozet veya Dropdown */}
+                            {isTerminalStatus ? (
+                              <span style={{
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                backgroundColor: item.itemStatus === 'Cancelled' ? '#fef2f2' : 
+                                                item.itemStatus === 'Refund Requested' ? '#fffbeb' :
+                                                item.itemStatus === 'Refunded' ? '#f0fdf4' : '#fef2f2',
+                                color: item.itemStatus === 'Cancelled' ? '#ef4444' : 
+                                      item.itemStatus === 'Refund Requested' ? '#d97706' :
+                                      item.itemStatus === 'Refunded' ? '#16a34a' : '#dc2626',
+                                border: '1px solid',
+                                borderColor: item.itemStatus === 'Cancelled' ? '#fecaca' : 
+                                            item.itemStatus === 'Refund Requested' ? '#fde68a' :
+                                            item.itemStatus === 'Refunded' ? '#bbf7d0' : '#fca5a5'
+                              }}>
+                                {item.itemStatus === 'Cancelled' && '🚫 Cancelled'}
+                                {item.itemStatus === 'Refund Requested' && '↩️ Refund Requested'}
+                                {item.itemStatus === 'Refunded' && '💰 Refunded'}
+                                {item.itemStatus === 'Refund Rejected' && '❌ Refund Rejected'}
+                              </span>
+                            ) : (
+                              <select
+                                value={item.itemStatus || 'Processing'}
+                                onChange={(e) => updateItemStatus(order._id, item._id, e.target.value)}
+                                style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}
+                              >
+                                <option value="Processing">📦 Processing</option>
+                                <option value="In-Transit">🚚 In-Transit</option>
+                                <option value="Delivered">✅ Delivered</option>
+                              </select>
+                            )}
+                          </div>
+                        );
+                      })}
                     </td>
-                    <td style={{ padding: '15px', fontWeight: '600', color: '#0f172a' }}>${order.totalPrice || order.totalAmount}</td>
-                    <td style={{ padding: '15px', color: '#475569', maxWidth: '180px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{order.deliveryAddress}</td>
-                    <td style={{ padding: '15px' }}>
-                      <select 
-                        value={order.status || 'Processing'} 
-                        onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                        style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', cursor: 'pointer', fontWeight: '500', fontSize: '13px' }}
-                      >
-                        <option value="Processing">Processing</option>
-                        <option value="In-Transit">In-Transit</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </select>
-                    </td>
-                    <td style={{ padding: '15px', textAlign: 'right' }}>
+                    <td style={{ padding: '15px', fontWeight: '600', color: '#0f172a', paddingTop: '20px' }}>${order.totalPrice || order.totalAmount}</td>
+                    <td style={{ padding: '15px', color: '#475569', maxWidth: '180px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingTop: '20px' }}>{order.deliveryAddress}</td>
+                    
+                    {/* View Invoice Butonu (Yanındaki genel statü kaldırıldı) */}
+                    <td style={{ padding: '15px', textAlign: 'right', paddingTop: '20px' }}>
                       <button onClick={() => handleViewInvoice(order._id)} style={{ padding: '6px 12px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px' }}>
                         View
                       </button>
@@ -333,7 +368,6 @@ export default function ProductManager({ products, categories = [], fetchData, d
           </div>
         )}
 
-        {/*  */}
         {activeTab === 'comments' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {reviews.length === 0 ? (

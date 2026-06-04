@@ -69,7 +69,6 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
     }
   };
 
-  // --- SIPARIŞ IPTAL FONKSIYONU ---
   const handleCancelOrder = (orderId) => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
 
@@ -124,7 +123,8 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
     switch (status) {
       case 'Delivered': return { bg: '#d1fae5', text: '#065f46' };
       case 'In-Transit': return { bg: '#dbeafe', text: '#1e40af' };
-      case 'Cancelled': return { bg: '#fee2e2', text: '#991b1b' }; // İptal edilenler için kırmızı tonu
+      case 'Cancelled': 
+      case 'Refund Rejected': return { bg: '#fee2e2', text: '#991b1b' };
       case 'Refund Requested': return { bg: '#fef3c7', text: '#d97706' };
       case 'Refunded': return { bg: '#e0e7ff', text: '#3730a3' };
       case 'Processing':
@@ -210,7 +210,6 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
         </div>
       ) : (
         orders.map(order => {
-          const statusColors = getStatusColor(order.status);
           return (
             <div
               key={order._id}
@@ -222,6 +221,7 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                 boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
               }}
             >
+              {/* ÜST BAŞLIK ALANI - SAĞ ÜSTTEKİ GENEL STATÜ TAMAMEN KALDIRILDI */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px', borderBottom: '1px solid #eee', paddingBottom: '15px' }}>
                 <div>
                   <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>ORDER ID</div>
@@ -236,54 +236,67 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                     })}
                   </div>
                 </div>
-                <span style={{
-                  padding: '6px 14px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  backgroundColor: statusColors.bg,
-                  color: statusColors.text
-                }}>
-                  {order.status || 'Processing'}
-                </span>
               </div>
 
+              {/* ÜRÜNLERİN LİSTELENDİĞİ ALAN - 3 SÜTUNLU FLEXBOX DÜZENİ */}
               <div style={{ marginBottom: '15px' }}>
-                {order.items && order.items.map((item, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '10px 0',
-                      borderBottom: idx === order.items.length - 1 ? 'none' : '1px solid #f5f5f5'
-                    }}
-                  >
-                    <div>
-                      <div
-                        onClick={() => handleProductClick(item.productId)}
-                        style={{
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          color: '#3b82f6',
-                          textDecoration: 'none',
-                          display: 'inline-block'
-                        }}
-                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                      >
-                        {item.name}
+                {order.items && order.items.map((item, idx) => {
+                  const itemStatusStyle = getStatusColor(item.itemStatus || 'Processing');
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 0',
+                        borderBottom: idx === order.items.length - 1 ? 'none' : '1px solid #f5f5f5'
+                      }}
+                    >
+                      {/* 1. Sütun: Sol Bölüm (Ürün İsmi ve Adet Detayları) */}
+                      <div style={{ flex: 1, textAlign: 'left' }}>
+                        <div
+                          onClick={() => handleProductClick(item.productId)}
+                          style={{
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            color: '#3b82f6',
+                            textDecoration: 'none',
+                            display: 'inline-block'
+                          }}
+                          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                        >
+                          {item.name}
+                        </div>
+                        <div style={{ marginTop: '4px', fontSize: '13px', color: '#888' }}>
+                          Qty: {item.quantity} × ${item.price}
+                        </div>
                       </div>
-                      <div style={{ fontSize: '13px', color: '#888' }}>
-                        Qty: {item.quantity} × ${item.price}
+
+                      {/* 2. Sütun: Orta Bölüm (Ürün Statüsü - Tam Ortada Durur) */}
+                      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '6px',
+                          backgroundColor: itemStatusStyle.bg,
+                          color: itemStatusStyle.text,
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          textAlign: 'center',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {item.itemStatus || 'Processing'}
+                        </span>
+                      </div>
+
+                      {/* 3. Sütun: Sağ Bölüm (Fiyat) */}
+                      <div style={{ flex: 1, textAlign: 'right', fontWeight: 'bold' }}>
+                        ${item.price * item.quantity}
                       </div>
                     </div>
-                    <div style={{ fontWeight: 'bold' }}>
-                      ${(item.price * item.quantity).toLocaleString()}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '15px', borderTop: '1px solid #eee' }}>
@@ -295,7 +308,6 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                 </div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   
-                  {/* --- SADECE PROCESSING DURUMUNDA CANCEL BUTONU GÖSTER --- */}
                   {(order.status === 'Processing' || !order.status) && (
                     <button
                       onClick={() => handleCancelOrder(order._id)}
@@ -340,7 +352,7 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
 
                   {order.status === 'Cancelled' && (
                     <span style={{ padding: '10px 16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', fontWeight: '600', fontSize: '14px' }}>
-                      🚫 Cancelled
+                       🚫 Cancelled
                     </span>
                   )}
 

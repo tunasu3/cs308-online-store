@@ -49,7 +49,7 @@ export default function RefundEvaluation({ fetchData }) {
         Refund Evaluation Panel
       </h1>
       <p style={{ color: '#666', marginBottom: '25px' }}>
-        As a Sales Manager, evaluate incoming refund requests and restock products automatically upon approval.
+        
       </p>
 
       {message && (
