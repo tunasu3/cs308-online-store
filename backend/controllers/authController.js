@@ -32,7 +32,7 @@ exports.register = async (req, res) => {
         res.status(201).json({
             message: 'User registered successfully!',
             token,
-            user: { _id: user._id, name: user.name, email: user.email, role: user.role }
+            user: { _id: user._id, name: user.name, email: user.email, role: user.role, taxID: user.taxID, homeAddress: user.homeAddress }
         });
     } catch (err) {
         console.error('Register error:', err);
@@ -75,7 +75,7 @@ exports.verifySession = async (req, res) => {
         const user = await User.findById(id);
         if (!user) return res.status(400).json({ message: 'Invalid cookie content' });
 
-        res.json({ user: { _id: user._id, name: user.name, email: user.email, role: user.role } });
+       res.json({ user: { _id: user._id, name: user.name, email: user.email, role: user.role, taxID: user.taxID, homeAddress: user.homeAddress } });
     } catch (err) {
         if (err.name == "TokenExpiredError") {
             res.status(403).json({ message: "Session cookie expired" })
@@ -83,5 +83,30 @@ exports.verifySession = async (req, res) => {
             console.error('Login error:', err);
             res.status(500).json({ message: err.message });
         }
+    }
+};
+
+exports.updateProfile = async (req, res) => {
+    try {
+        const { token, name, homeAddress, taxID } = req.body;
+
+        const { id } = jwt.verify(token, process.env.JWT_SECRET || 'secretkey');
+
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (name !== undefined) user.name = name;
+        if (homeAddress !== undefined) user.homeAddress = homeAddress;
+        if (taxID !== undefined) user.taxID = taxID;
+
+        await user.save();
+
+        res.json({
+            message: 'Profile updated successfully',
+            user: { _id: user._id, name: user.name, email: user.email, role: user.role, taxID: user.taxID, homeAddress: user.homeAddress }
+        });
+    } catch (err) {
+        console.error('Update profile error:', err);
+        res.status(500).json({ message: err.message });
     }
 };

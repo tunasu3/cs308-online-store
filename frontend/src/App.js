@@ -13,6 +13,7 @@ import Cart from './pages/Cart';
 import MyOrders from './pages/MyOrders';
 import Wishlist from './pages/Wishlist';
 import RefundEvaluation from './pages/Dashboard/RefundEvaluation'; 
+import Profile from './pages/Profile';
 
 const socket = io('http://localhost:8000');
 
@@ -267,6 +268,12 @@ export default function App() {
                   My Orders
               </li>
             )}
+            
+            {user && (
+              <li onClick={() => { setView('profile'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
+                  Profile Settings
+              </li>
+            )}
 
             {user && (
               <li onClick={() => { setUser(null); removeCookie("sessionToken"); setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#666' }}>Logout</li>
@@ -289,6 +296,7 @@ export default function App() {
         {view === 'cart' && <Cart cart={cart} setCart={setCart} user={user} setView={setView} fetchData={fetchData} />}
         {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} user={user} fetchData={fetchData} updateWishlistCount={updateWishlistCount} />}
         {view === 'myOrders' && <MyOrders user={user} setView={setView} products={products} setSelectedProduct={setSelectedProduct} />}
+        {view === 'profile' && <Profile user={user} setUser={setUser} setView={setView} sessionToken={cookies.sessionToken} />}
         {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager fetchData={fetchData} products={products} /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} updateWishlistCount={updateWishlistCount} />)}
 
         {view === 'refundEvaluation' && (
