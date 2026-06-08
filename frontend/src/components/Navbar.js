@@ -2,6 +2,7 @@ import React from 'react';
 
 export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOpen, setIsMenuOpen, wishlistCount }) {
   const totalItems = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+  const isCustomer = !user || user.role === 'Customer';
   const [hasWishlistNotification, setHasWishlistNotification] = React.useState(false);
 
   React.useEffect(() => {
@@ -51,7 +52,7 @@ export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOp
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           {getFirstName()}
         </div>
-
+{isCustomer && (
         <div onClick={() => { setView('wishlist'); localStorage.setItem("wishlist_seen", "true"); setHasWishlistNotification(false); }}
         style={{ 
           cursor: 'pointer', 
@@ -109,7 +110,9 @@ export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOp
               />
             )}
         </div>
+        )}
 
+        {isCustomer && (
         <button onClick={() => setIsCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#111827', fontWeight: '600', padding: '8px 12px', borderRadius: '6px', transition: 'background 0.2s' }}>
           <div style={{ position: 'relative' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
@@ -121,6 +124,7 @@ export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOp
           </div>
           <span style={{ fontSize: '15px' }}>Cart</span>
         </button>
+        )}
       </div>
 
     </nav>
