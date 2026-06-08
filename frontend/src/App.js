@@ -263,13 +263,13 @@ export default function App() {
               </>
             )}
 
-            {user && (
+            {user && user.role === 'Customer' &&(
               <li onClick={() => { setView('myOrders'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
                   My Orders
               </li>
             )}
             
-            {user && (
+            {user && user.role === 'Customer' && (
               <li onClick={() => { setView('profile'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
                   Profile Settings
               </li>
