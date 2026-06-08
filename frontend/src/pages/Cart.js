@@ -17,6 +17,7 @@ const formatPrice = (num) => {
 };
 
 export default function Cart({ cart, setCart, setView, user, fetchData }) {
+  const cartKey = user && user._id ? `cart_${user._id}` : 'cart_guest';
   const [showCheckout, setShowCheckout] = useState(false);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', cardNumber: '', expiry: '', cvv: '' });
   const [paymentStatus, setPaymentStatus] = useState(null); 
@@ -38,7 +39,7 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
             }
             return item;
           });
-          localStorage.setItem('cart', JSON.stringify(updatedCart));
+          localStorage.setItem(cartKey, JSON.stringify(updatedCart));
           return updatedCart;
         });
 
@@ -65,7 +66,7 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
   const removeItem = (id) => {
     const updatedCart = cart.filter(item => item._id !== id && item.productId !== id);
     setCart(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    localStorage.setItem(cartKey, JSON.stringify(updatedCart));
   };
 
   const updateQty = (id, newQty) => {
@@ -77,7 +78,7 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
       (item._id === id || item.productId === id) ? { ...item, qty: newQty } : item
     );
     setCart(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    localStorage.setItem(cartKey, JSON.stringify(updatedCart));
   };
 
   useEffect(() => {
