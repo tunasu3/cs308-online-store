@@ -18,6 +18,20 @@ import Profile from './pages/Profile';
 const socket = io('http://localhost:8000');
 
 export default function App() {
+  const getCartKey = (u) => (u && u._id ? `cart_${u._id}` : 'cart_guest');
+
+  const mergeCarts = (guestCart, userCart) => {
+    const merged = [...userCart];
+    guestCart.forEach(gItem => {
+      const existing = merged.find(m => (m._id === gItem._id || m.productId === gItem._id));
+      if (existing) {
+        existing.qty = (existing.qty || 1) + (gItem.qty || 1);
+      } else {
+        merged.push({ ...gItem });
+      }
+    });
+    return merged;
+  };
   const [cookies, setCookie, removeCookie] = useCookies(["sessionToken"]);
 
   const [view, setView] = useState('shop');
@@ -25,7 +39,7 @@ export default function App() {
   const [categories, setCategories] = useState([]);
   
   const [cart, setCart] = useState(() => {
-    const savedCart = localStorage.getItem('cart');
+    const savedCart = localStorage.getItem('cart_guest');
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
@@ -58,6 +72,23 @@ export default function App() {
   }, [cookies, removeCookie]);
 
   useEffect(() => { verifySession(); }, [verifySession]);
+
+  useEffect(() => {
+    const key = getCartKey(user);
+    if (user && user._id) {
+      // user just logged in: merge any guest cart into their saved cart
+      const guestCart = JSON.parse(localStorage.getItem('cart_guest') || '[]');
+      const userCart = JSON.parse(localStorage.getItem(key) || '[]');
+      const merged = mergeCarts(guestCart, userCart);
+      localStorage.setItem(key, JSON.stringify(merged));
+      localStorage.removeItem('cart_guest');
+      setCart(merged);
+    } else {
+      // guest (logged out or not logged in): load guest cart
+      const guestCart = JSON.parse(localStorage.getItem('cart_guest') || '[]');
+      setCart(guestCart);
+    }
+  }, [user]);
 
   const updateWishlistCount = useCallback(async () => {
     if (!user) {
@@ -165,7 +196,7 @@ export default function App() {
       } else {
         updated = [...prevCart, { ...product, qty: 1 }];
       }
-      localStorage.setItem('cart', JSON.stringify(updated));
+      localStorage.setItem(getCartKey(user), JSON.stringify(updated));
       return updated;
     });
   };
