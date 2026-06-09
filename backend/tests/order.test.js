@@ -12,11 +12,11 @@ describe('Order Model', () => {
     expect(order.status).toBe('Processing');
   });
 
-  test('13. Order status must be one of: Processing, In-Transit, Delivered', () => {
-    const order = new Order({ totalPrice: 200, status: 'Cancelled' });
+  test('13. Order status must be one of the allowed enum values', () => {
+    const order = new Order({ totalPrice: 200, status: 'Teleported' });
     const err = order.validateSync();
     expect(err.errors.status).toBeDefined();
-  });
+});
 
   test('14. "Delivered" should be a valid status', () => {
     const order = new Order({ totalPrice: 200, status: 'Delivered' });
