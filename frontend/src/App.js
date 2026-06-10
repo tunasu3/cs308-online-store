@@ -301,7 +301,7 @@ export default function App() {
           <ul style={{ listStyle: 'none', padding: 0, marginTop: '20px' }}>
             <li onClick={() => { setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>Shop</li>
             
-            {(user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin') && (
+            {(user?.role === 'ProductManager' || user?.role === 'SalesManager') && (
               <>
                 <li onClick={() => { setView('products'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}>
                   Product Manager Dashboard

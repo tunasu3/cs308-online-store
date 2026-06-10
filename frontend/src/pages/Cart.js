@@ -116,6 +116,13 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
             setPaymentStatus('success');
             const data = await res.json();
             setInvoiceId(data.id);
+            
+            // --- DÜZELTİLEN KISIM BURASI ---
+            // Ödeme başarılı olur olmaz sepeti hem state'den hem local storage'dan SİLİYORUZ.
+            setCart([]);
+            localStorage.removeItem(cartKey); 
+            // -------------------------------
+
             if (fetchData) fetchData();
           } else {
             setPaymentStatus('fail');
@@ -142,8 +149,6 @@ export default function Cart({ cart, setCart, setView, user, fetchData }) {
       console.error(err);
     }
 
-    setCart([]);
-    localStorage.removeItem('cart');
     setShowCheckout(false);
     setView('shop');
     setInvoiceSending(false);
