@@ -323,70 +323,78 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  
-                  {(order.status === 'Processing' || !order.status) && (
-                    <button
-                      onClick={() => handleCancelOrder(order._id)}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#ef4444',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                      }}
-                    >
-                      ❌ Cancel Order
-                    </button>
-                  )}
+  
+  {}
+  {(order.status === 'Processing' || !order.status) && (
+    <button
+      onClick={() => handleCancelOrder(order._id)}
+      style={{
+        padding: '10px 20px', backgroundColor: '#ef4444', color: '#fff',
+        border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600',
+      }}
+    >
+      ❌ Cancel Order
+    </button>
+  )}
 
-                  {order.status === 'Delivered' && (
-                    <button
-                      onClick={() => handleRefundRequest(order)}
-                      disabled={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30}
-                      title={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '30-day refund window has expired' : 'Request a refund'}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#e5e7eb' : '#ef4444',
-                        color: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#9ca3af' : '#fff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? 'not-allowed' : 'pointer',
-                        fontWeight: '600',
-                      }}
-                    >
-                       Request Refund
-                    </button>
-                  )}        
+  {}
+  {order.status === 'Delivered' && (
+    <button
+      onClick={() => handleRefundRequest(order)}
+      disabled={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30}
+      title={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '30-day refund window has expired' : 'Request a refund'}
+      style={{
+        padding: '10px 20px',
+        backgroundColor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#e5e7eb' : '#ef4444',
+        color: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#9ca3af' : '#fff',
+        border: 'none', borderRadius: '6px',
+        cursor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? 'not-allowed' : 'pointer',
+        fontWeight: '600',
+      }}
+    >
+      Request Refund
+    </button>
+  )}        
 
-                  {order.status === 'Refund Requested' && (
-                    <span style={{ padding: '10px 16px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '6px', fontWeight: '600', fontSize: '14px' }}>
-                       Refund Pending
-                    </span>
-                  )}
+  {}
+  {order.status === 'Refund Requested' && (
+    <span style={{ padding: '10px 16px', backgroundColor: '#fef3c7', color: '#92400e', borderRadius: '6px', fontWeight: '600', fontSize: '14px', border: '1px solid #fde68a' }}>
+      ⏳ Under Consideration
+    </span>
+  )}
 
-                  {order.status === 'Cancelled' && (
-                    <span style={{ padding: '10px 16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', fontWeight: '600', fontSize: '14px' }}>
-                       🚫 Cancelled
-                    </span>
-                  )}
+  {}
+  {order.status === 'Refunded' && (
+    <span style={{ padding: '10px 16px', backgroundColor: '#d1fae5', color: '#065f46', borderRadius: '6px', fontWeight: '600', fontSize: '14px', border: '1px solid #a7f3d0' }}>
+      ✅ Refunded
+    </span>
+  )}
 
-                  <button
-                    onClick={() => downloadInvoice(order._id)}
-                    style={{
-                      padding: '10px 20px',
-                      backgroundColor: '#3b82f6',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontWeight: '600'
-                    }}
-                  >
-                    📄 Download Invoice
-                  </button>
-                </div>
+  {}
+  {order.status === 'Refund Rejected' && (
+    <span style={{ padding: '10px 16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', fontWeight: '600', fontSize: '14px', border: '1px solid #fecaca' }}>
+      ❌ Refund Rejected
+    </span>
+  )}
+
+  {}
+  {order.status === 'Cancelled' && (
+    <span style={{ padding: '10px 16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', fontWeight: '600', fontSize: '14px', border: '1px solid #fecaca' }}>
+      🚫 Cancelled
+    </span>
+  )}
+
+  {}
+  <button
+    onClick={() => downloadInvoice(order._id)}
+    style={{
+      padding: '10px 20px', backgroundColor: '#3b82f6', color: '#fff',
+      border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600'
+    }}
+  >
+    📄 Download Invoice
+  </button>
+</div>
               </div>
 
               {order.deliveryAddress && (
