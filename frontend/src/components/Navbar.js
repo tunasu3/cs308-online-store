@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOpen, setIsMenuOpen, wishlistCount }) {
+export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOpen, setIsMenuOpen, wishlistCount, accounts, switchAccount }) {
   const totalItems = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
   const isCustomer = !user || user.role === 'Customer';
   const [hasWishlistNotification, setHasWishlistNotification] = React.useState(false);
@@ -48,11 +48,25 @@ export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOp
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         
-        <div onClick={() => setView(user ? 'shop' : 'login')} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#4b5563', fontSize: '14px', fontWeight: '500' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          {getFirstName()}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div onClick={() => setView(user ? 'shop' : 'login')} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#4b5563', fontSize: '14px', fontWeight: '500' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            {getFirstName()}
+          </div>
+          
+          <select 
+            value={user?._id || ''} 
+            onChange={(e) => switchAccount(e.target.value)}
+            style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', outline: 'none', fontSize: '13px', cursor: 'pointer', color: '#374151', fontWeight: '500' }}
+          >
+            <option value="">Guest (Logout)</option>
+            {accounts && accounts.map((acc) => (
+              <option key={acc._id} value={acc._id}>{acc.name} ({acc.role})</option>
+            ))}
+          </select>
         </div>
-{isCustomer && (
+
+        {isCustomer && (
         <div onClick={() => { setView('wishlist'); localStorage.setItem("wishlist_seen", "true"); setHasWishlistNotification(false); }}
         style={{ 
           cursor: 'pointer', 

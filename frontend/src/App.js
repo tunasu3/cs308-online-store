@@ -32,11 +32,13 @@ export default function App() {
     });
     return merged;
   };
+
   const [cookies, setCookie, removeCookie] = useCookies(["sessionToken"]);
 
   const [view, setView] = useState('shop');
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem('cart_guest');
@@ -49,6 +51,20 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [authData, setAuthData] = useState({ email: '', password: '', fullName: '', taxId: '', address: '' });
   const [wishlistCount, setWishlistCount] = useState(0);
+
+  const switchAccount = (accountId) => {
+    if (!accountId) {
+      setUser(null);
+      removeCookie("sessionToken");
+      setView('shop');
+    } else {
+      const account = accounts.find(a => a._id === accountId);
+      if (account) {
+        setUser(account);
+        setView('shop');
+      }
+    }
+  };
 
   const verifySession = useCallback(async () => {
     if (cookies.sessionToken) {
@@ -76,7 +92,6 @@ export default function App() {
   useEffect(() => {
     const key = getCartKey(user);
     if (user && user._id) {
-      // user just logged in: merge any guest cart into their saved cart
       const guestCart = JSON.parse(localStorage.getItem('cart_guest') || '[]');
       const userCart = JSON.parse(localStorage.getItem(key) || '[]');
       const merged = mergeCarts(guestCart, userCart);
@@ -84,7 +99,6 @@ export default function App() {
       localStorage.removeItem('cart_guest');
       setCart(merged);
     } else {
-      // guest (logged out or not logged in): load guest cart
       const guestCart = JSON.parse(localStorage.getItem('cart_guest') || '[]');
       setCart(guestCart);
     }
@@ -108,8 +122,12 @@ export default function App() {
     try {
       const pRes = await fetch('http://localhost:8000/api/products');
       const cRes = await fetch('http://localhost:8000/api/categories');
+      const uRes = await fetch('http://localhost:8000/api/auth/users');
       setProducts(await pRes.json());
       setCategories(await cRes.json());
+      if (uRes.ok) {
+        setAccounts(await uRes.json());
+      }
       updateWishlistCount();
     } catch (err) { 
       console.error(err); 
@@ -241,6 +259,7 @@ export default function App() {
         setUser(data.user);
         setCookie("sessionToken", data.token, { expiresIn: 7 * 24 * 60 * 60 });
         setView('shop');
+        fetchData();
         alert('Registration successful! You are now logged in.');
       } else {
         alert(data.message || 'Registration failed');
@@ -271,6 +290,8 @@ export default function App() {
         setIsCartOpen={() => setView('cart')} 
         setIsMenuOpen={setIsMenuOpen}
         wishlistCount={wishlistCount}
+        accounts={accounts}
+        switchAccount={switchAccount}
       />
 
       {isMenuOpen && (
@@ -296,13 +317,13 @@ export default function App() {
 
             {user && user.role === 'Customer' &&(
               <li onClick={() => { setView('myOrders'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
-                  My Orders
+                 My Orders
               </li>
             )}
             
             {user && user.role === 'Customer' && (
               <li onClick={() => { setView('profile'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
-                  Profile Settings
+                 Profile Settings
               </li>
             )}
 
