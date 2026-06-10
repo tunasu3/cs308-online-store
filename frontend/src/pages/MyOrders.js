@@ -6,6 +6,7 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
   
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   const fetchOrders = () => {
     if (!user) {
@@ -187,6 +188,20 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
         >
           Download All Invoices (PDF)
         </button>
+        <select
+  value={statusFilter}
+  onChange={e => setStatusFilter(e.target.value)}
+  style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px', cursor: 'pointer', backgroundColor: '#fff' }}
+>
+  <option value="">All Statuses</option>
+  <option value="Processing">Processing</option>
+  <option value="In-Transit">In-Transit</option>
+  <option value="Delivered">Delivered</option>
+  <option value="Cancelled">Cancelled</option>
+  <option value="Refund Requested">Refund Requested</option>
+  <option value="Refunded">Refunded</option>
+  <option value="Refund Rejected">Refund Rejected</option>
+</select>
 
         {(startDate || endDate) && (
           <button 
@@ -195,6 +210,7 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
           >
             Clear
           </button>
+          
         )}
       </div>
 
@@ -209,7 +225,7 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
           </button>
         </div>
       ) : (
-        orders.map(order => {
+        orders.filter(order => !statusFilter || order.status === statusFilter || (!order.status && statusFilter === 'Processing')).map(order => {
           return (
             <div
               key={order._id}

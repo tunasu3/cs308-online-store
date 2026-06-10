@@ -35,6 +35,7 @@ function SalesManager({ fetchData, products }) {
   const [costData, setCostData] = useState([]);
   const [totalCost, setTotalCost] = useState(null);
   const [totalProfit, setTotalProfit] = useState(null);
+  const [revenueLoading, setRevenueLoading] = useState(false);
 
   const [invoices, setInvoices] = useState([]);
   const [invoiceStart, setInvoiceStart] = useState("");
@@ -120,51 +121,30 @@ function SalesManager({ fetchData, products }) {
   };
 
   const getRevenue = async () => {
-    if (!start || !end) {
-      alert("Please select start and end dates");
-      return;
-    }
-    try {
-      const res = await axios.get(
-        `http://localhost:8000/api/sales/revenue?start=${start}&end=${end}`
-      );
-      setTotalRevenue(res.data.totalRevenue);
-      setLabels(
-        res.data.labels.map((date) =>
-          new Date(date).toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "short",
-          })
-        )
-      );
-      setData(res.data.data);
-    } catch (err) {
-      console.error(err);
-      alert("Error fetching revenue");
-    }
-  };
-
-  const getProfitLoss = async () => {
-    if (!start || !end) {
-      alert("Please select start and end dates");
-      return;
-    }
-    try {
-      const res = await axios.get(
-        `http://localhost:8000/api/sales/profit-loss?start=${start}&end=${end}`
-      );
-      setTotalRevenue(res.data.totalRevenue);
-      setTotalCost(res.data.totalCost);
-      setTotalProfit(res.data.totalProfit);
-      setLabels(res.data.labels.map(date => new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })));
-      setData(res.data.revenueData);
-      setProfitData(res.data.profitData);
-      setCostData(res.data.costData);
-    } catch (err) {
-      console.error(err);
-      alert("Error fetching profit/loss data");
-    }
-  };
+  if (!start || !end) {
+    alert("Please select start and end dates");
+    return;
+  }
+  setRevenueLoading(true);
+  try {
+    const [, profitRes] = await Promise.all([
+      axios.get(`http://localhost:8000/api/sales/revenue?start=${start}&end=${end}`),
+      axios.get(`http://localhost:8000/api/sales/profit-loss?start=${start}&end=${end}`)
+    ]);
+    setTotalRevenue(profitRes.data.totalRevenue);
+    setTotalCost(profitRes.data.totalCost);
+    setTotalProfit(profitRes.data.totalProfit);
+    setLabels(profitRes.data.labels.map(date => new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })));
+    setData(profitRes.data.revenueData);
+    setProfitData(profitRes.data.profitData);
+    setCostData(profitRes.data.costData);
+  } catch (err) {
+    console.error(err);
+    alert("Error fetching financial data");
+  } finally {
+    setRevenueLoading(false);
+  }
+};
 
   const getInvoices = async () => {
     if (!invoiceStart || !invoiceEnd) {
@@ -499,9 +479,9 @@ function SalesManager({ fetchData, products }) {
           <h3>Revenue & Financial Reports</h3>
           <input type="date" style={{ ...inputStyle, marginRight: "10px" }} onChange={(e) => setStart(e.target.value)} />
           <input type="date" style={{ ...inputStyle, marginRight: "10px" }} onChange={(e) => setEnd(e.target.value)} />
-          <button onClick={getRevenue} style={{ padding: "8px 14px", background: "#2c3e50", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}>Get Revenue</button>
-          <button onClick={getProfitLoss} style={{ padding: "8px 14px", background: "#27ae60", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", marginLeft: "10px" }}>Get Profit/Loss</button>
-          
+          <button onClick={getRevenue} disabled={revenueLoading} style={{ padding: "8px 14px", background: "#2c3e50", color: "#fff", border: "none", borderRadius: "4px", cursor: revenueLoading ? "not-allowed" : "pointer", opacity: revenueLoading ? 0.7 : 1 }}>
+  {revenueLoading ? "⏳ Compiling financial data..." : "Get Revenue"}
+</button>
           {start && end && (
             <div style={{ marginTop: "12px", padding: "8px 12px", background: "#f1f2f6", borderRadius: "6px", fontSize: "14px", color: "#444", display: "block", width: "fit-content" }}>
               Showing Revenue from <strong>{formatDateLong(start)}</strong> to <strong>{formatDateLong(end)}</strong>
