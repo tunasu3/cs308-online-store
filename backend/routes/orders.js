@@ -148,6 +148,8 @@ router.put('/:id/refund-evaluate', async (req, res) => {
                     }
                 }
             }
+            const io = req.app.get('io');
+            if (io) io.emit('stockUpdated', { reason: 'refund', orderId: order._id });
         } else if (action === 'reject') {
             order.status = 'Refund Rejected';
             
@@ -460,6 +462,8 @@ router.put('/:id/cancel', async (req, res) => {
                 }
             }
         }
+        const io = req.app.get('io');
+        if (io) io.emit('stockUpdated', { reason: 'cancel', orderId: order._id });
 
         res.json({ message: 'Order cancelled successfully and stocks reverted.', order });
     } catch (err) {

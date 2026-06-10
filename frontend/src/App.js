@@ -196,10 +196,16 @@ export default function App() {
     socket.on('product-discounted', handleIncomingDiscount);
     socket.on('flash_discount', handleIncomingDiscount);
 
+    const handleStockUpdate = () => {
+      fetchData();
+    };
+    socket.on('stockUpdated', handleStockUpdate);
+
     return () => {
       socket.off('productDiscount', handleIncomingDiscount);
       socket.off('product-discounted', handleIncomingDiscount);
       socket.off('flash_discount', handleIncomingDiscount);
+      socket.off('stockUpdated', handleStockUpdate);
     };
   }, [cart, user, fetchData]);
 
