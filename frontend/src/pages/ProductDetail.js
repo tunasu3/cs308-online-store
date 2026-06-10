@@ -9,7 +9,8 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
   const [isInWishlist, setIsInWishlist] = useState(false);
   const isOutOfStock = product.stock === 0;
 
-  const productRating = product.rating || 0;
+  const [liveRating, setLiveRating] = useState(product.rating || 0);
+  const productRating = liveRating;
   const discountedPrice = product.discount > 0 
     ? (product.price * (1 - product.discount / 100)).toFixed(2) 
     : product.price;
@@ -34,6 +35,10 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
         .catch(err => console.error(err));
     }
   }, [product._id, user]);
+
+  useEffect(() => {
+    setLiveRating(product.rating || 0);
+  }, [product._id, product.rating]);
 
   const toggleWishlist = async () => {
     if (!user) {
@@ -92,6 +97,13 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
       setRating(0);
       const refreshed = await fetch(`http://localhost:8000/api/comments/product/${product._id}`);
       setReviews(await refreshed.json());
+
+      const prodRes = await fetch(`http://localhost:8000/api/products/${product._id}`);
+      if (prodRes.ok) {
+        const updatedProduct = await prodRes.json();
+        setLiveRating(updatedProduct.rating || 0);
+      }
+
       if (fetchData) fetchData();
     } catch (err) {
       console.error(err);
