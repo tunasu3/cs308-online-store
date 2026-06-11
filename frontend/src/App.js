@@ -294,8 +294,23 @@ export default function App() {
     };
 
     const handleOrderStatusUpdate = () => {
-      fetchDataRef.current();
-    };
+  fetchDataRef.current();
+};
+
+const handleRefundUpdate = (data) => {
+  const currentUser = userRef.current;
+  if (currentUser && currentUser._id === data.userId) {
+    const approved = data.action === 'approve';
+    toast[approved ? 'success' : 'error'](
+      <div style={{ padding: '5px' }}>
+        {approved ? '✅' : '❌'} <strong>Refund {approved ? 'Approved' : 'Rejected'}!</strong><br />
+        Your refund request has been {approved ? 'approved. The amount will be credited back to you.' : 'rejected by the sales manager.'}
+      </div>,
+      { position: "top-center", autoClose: 15000, hideProgressBar: false, closeOnClick: true, pauseOnHover: true, draggable: true, theme: "colored" }
+    );
+    fetchDataRef.current();
+  }
+};
 
     socket.on('productDiscount', handleIncomingDiscount);
     socket.on('product-discounted', handleIncomingDiscount);
@@ -303,6 +318,7 @@ export default function App() {
     socket.on('product-restocked', handleIncomingRestock);
     socket.on('stockUpdated', handleStockUpdate);
     socket.on('orderStatusUpdated', handleOrderStatusUpdate);
+    socket.on('refundUpdated', handleRefundUpdate);
 
     return () => {
       socket.off('productDiscount', handleIncomingDiscount);
@@ -311,6 +327,7 @@ export default function App() {
       socket.off('product-restocked', handleIncomingRestock);
       socket.off('stockUpdated', handleStockUpdate);
       socket.off('orderStatusUpdated', handleOrderStatusUpdate);
+      socket.off('refundUpdated', handleRefundUpdate);
     };
   }, []);
 

@@ -162,7 +162,9 @@ router.put('/:id/refund-evaluate', async (req, res) => {
         }
 
         await order.save();
-        res.json({ message: `Refund successfully ${action}d!`, order });
+const io = req.app.get('io');
+if (io) io.emit('refundUpdated', { orderId: order._id, userId: order.user.toString(), action, userName: order.userName });
+res.json({ message: `Refund successfully ${action}d!`, order });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
