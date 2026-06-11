@@ -77,6 +77,11 @@ export default function App() {
         const data = await res.json();
         if (res.ok) {
           setUser(data.user);
+          if (data.user.role === 'ProductManager') {
+            setView('products');
+          } else if (data.user.role === 'SalesManager') {
+            setView('salesManager');
+          }
         } else {
           alert(data.message);
           removeCookie("sessionToken");
@@ -237,7 +242,13 @@ export default function App() {
       if (res.ok) {
         setUser(data.user);
         setCookie("sessionToken", data.token, { expiresIn: 7 * 24 * 60 * 60 });
-        setView('shop');
+        if (data.user.role === 'ProductManager') {
+          setView('products');
+        } else if (data.user.role === 'SalesManager') {
+          setView('salesManager');
+        } else {
+          setView('shop');
+        }
       } else { 
         alert(data.message); 
       }
@@ -305,13 +316,18 @@ export default function App() {
           <button onClick={() => setIsMenuOpen(false)} style={{ float: 'right', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
           <h3 style={{ marginTop: '40px' }}>Menu</h3>
           <ul style={{ listStyle: 'none', padding: 0, marginTop: '20px' }}>
-            <li onClick={() => { setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>Shop</li>
-            
-            {(user?.role === 'ProductManager' || user?.role === 'SalesManager') && (
+            {(!user || user.role === 'Customer') && (
+              <li onClick={() => { setView('shop'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>Shop</li>
+            )}
+
+            {user?.role === 'ProductManager' && (
+              <li onClick={() => { setView('products'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold', borderBottom: '1px solid #eee' }}>
+                Product Manager Dashboard
+              </li>
+            )}
+
+            {user?.role === 'SalesManager' && (
               <>
-                <li onClick={() => { setView('products'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}>
-                  Product Manager Dashboard
-                </li>
                 <li onClick={() => { setView('salesManager'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', color: '#dc2626', fontWeight: 'bold' }}>
                   Sales Manager Dashboard
                 </li>
@@ -355,10 +371,20 @@ export default function App() {
         {view === 'productDetail' && <ProductDetail product={selectedProduct} addToCart={addToCart} setView={setView} user={user} fetchData={fetchData} updateWishlistCount={updateWishlistCount} />}
         {view === 'myOrders' && <MyOrders user={user} setView={setView} products={products} setSelectedProduct={setSelectedProduct} />}
         {view === 'profile' && <Profile user={user} setUser={setUser} setView={setView} sessionToken={cookies.sessionToken} />}
-        {view === 'salesManager' && (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin' ? <SalesManager fetchData={fetchData} products={products} /> : <Shop products={products} categories={categories} searchTerm={searchTerm} addToCart={addToCart} setView={setView} setSelectedProduct={setSelectedProduct} user={user} updateWishlistCount={updateWishlistCount} />)}
+        {view === 'salesManager' && (
+          (user?.role === 'SalesManager' || user?.role === 'Admin') ? (
+            <SalesManager fetchData={fetchData} products={products} />
+          ) : (
+            <div style={{ textAlign: 'center', marginTop: '50px' }}>
+              <h2>Access Denied</h2>
+              <p>You don't have permission to view this page.</p>
+              <button onClick={() => setView('shop')} style={{ padding: '10px 20px', marginTop: '15px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Go Back Home</button>
+            </div>
+          )
+        )}
 
         {view === 'refundEvaluation' && (
-          (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin') ? (
+          (user?.role === 'SalesManager' || user?.role === 'Admin') ? (
             <RefundEvaluation fetchData={fetchData} />
           ) : (
             <div style={{ textAlign: 'center', marginTop: '50px' }}>
@@ -381,7 +407,7 @@ export default function App() {
         )}
 
         {view === 'products' && (
-          (user?.role === 'ProductManager' || user?.role === 'SalesManager' || user?.role === 'Admin') ? (
+          (user?.role === 'ProductManager' || user?.role === 'Admin') ? (
             <ProductManager products={products} categories={categories} fetchData={fetchData} deleteProduct={deleteProduct} />
           ) : (
             <div style={{ textAlign: 'center', marginTop: '50px' }}>
