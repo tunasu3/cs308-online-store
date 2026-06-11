@@ -42,7 +42,9 @@ router.post('/', async (req, res) => {
         const newCategory = new Category({ name: trimmedName });
         const savedCategory = await newCategory.save();
         
-        res.status(201).json(savedCategory);
+        const io = req.app.get('io');
+if (io) io.emit('categoryUpdated');
+res.status(201).json(savedCategory);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -76,7 +78,9 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ error: 'Category not found' });
         }
 
-        res.json(updatedCategory);
+        const io = req.app.get('io');
+if (io) io.emit('categoryUpdated');
+res.json(updatedCategory);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -88,7 +92,9 @@ router.delete('/:id', async (req, res) => {
         if (!deletedCategory) {
             return res.status(404).json({ error: 'Category not found' });
         }
-        res.json({ message: 'Category deleted successfully' });
+        const io = req.app.get('io');
+if (io) io.emit('categoryUpdated');
+res.json({ message: 'Category deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
