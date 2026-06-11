@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useCookies } from 'react-cookie';
 import { ToastContainer, toast } from 'react-toastify';
 import { io } from 'socket.io-client';
@@ -52,6 +52,24 @@ export default function App() {
   const [authData, setAuthData] = useState({ email: '', password: '', fullName: '', taxId: '', address: '' });
   const [wishlistCount, setWishlistCount] = useState(0);
 
+  const selectedProductRef = useRef(selectedProduct);
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    selectedProductRef.current = selectedProduct;
+  }, [selectedProduct]);
+
+  useEffect(() => {
+    userRef.current = user;
+    if (user) {
+      if (user.role === 'ProductManager' && view === 'shop') {
+        setView('products');
+      } else if (user.role === 'SalesManager' && view === 'shop') {
+        setView('salesManager');
+      }
+    }
+  }, [user, view]);
+
   const switchAccount = (accountId) => {
     if (!accountId) {
       setUser(null);
@@ -61,7 +79,13 @@ export default function App() {
       const account = accounts.find(a => a._id === accountId);
       if (account) {
         setUser(account);
-        setView('shop');
+        if (account.role === 'ProductManager') {
+          setView('products');
+        } else if (account.role === 'SalesManager') {
+          setView('salesManager');
+        } else {
+          setView('shop');
+        }
       }
     }
   };
@@ -81,6 +105,8 @@ export default function App() {
             setView('products');
           } else if (data.user.role === 'SalesManager') {
             setView('salesManager');
+          } else {
+            setView('shop');
           }
         } else {
           alert(data.message);
@@ -128,11 +154,25 @@ export default function App() {
       const pRes = await fetch('http://localhost:8000/api/products');
       const cRes = await fetch('http://localhost:8000/api/categories');
       const uRes = await fetch('http://localhost:8000/api/auth/users');
-      setProducts(await pRes.json());
-      setCategories(await cRes.json());
-      if (uRes.ok) {
-        setAccounts(await uRes.json());
+      
+      if (pRes.ok) {
+        const updatedProducts = await pRes.json();
+        setProducts(updatedProducts);
+
+        if (selectedProductRef.current) {
+          const freshProduct = updatedProducts.find(p => p._id === selectedProductRef.current._id);
+          if (freshProduct) {
+            setSelectedProduct(freshProduct);
+          }
+        }
       }
+
+      if (cRes.ok) {
+        const updatedCategories = await cRes.json();
+        setCategories(updatedCategories);
+      }
+      if (uRes.ok) setAccounts(await uRes.json());
+      
       updateWishlistCount();
     } catch (err) { 
       console.error(err); 
@@ -143,18 +183,31 @@ export default function App() {
     fetchData(); 
   }, [fetchData]);
 
+  const fetchDataRef = useRef(fetchData);
+  useEffect(() => {
+    fetchDataRef.current = fetchData;
+  }, [fetchData]);
+
   useEffect(() => {
     const handleIncomingDiscount = async (data) => {
+      const currentUser = userRef.current;
+      
+      if (currentUser && currentUser.role !== 'Customer') {
+        fetchDataRef.current();
+        return;
+      }
+
       const targetProductId = data.productId || data._id;
       const newPrice = data.newPrice || data.price;
       const discountRate = data.discountRate || data.discount;
 
-      const isInCart = cart.some(item => item._id === targetProductId || item.productId === targetProductId);
+      const currentCart = JSON.parse(localStorage.getItem(getCartKey(currentUser)) || '[]');
+      const isInCart = currentCart.some(item => item._id === targetProductId || item.productId === targetProductId);
       let isInWishlist = false;
 
-      if (user) {
+      if (currentUser) {
         try {
-          const res = await fetch(`http://localhost:8000/api/wishlist/${user._id}`);
+          const res = await fetch(`http://localhost:8000/api/wishlist/${currentUser._id}`);
           const wishlistItems = await res.json();
           isInWishlist = wishlistItems.some(item => item._id === targetProductId || item.productId === targetProductId);
         } catch (err) {
@@ -171,7 +224,7 @@ export default function App() {
               }
               return item;
             });
-            localStorage.setItem('cart', JSON.stringify(updated));
+            localStorage.setItem(getCartKey(currentUser), JSON.stringify(updated));
             return updated;
           });
         }
@@ -193,26 +246,80 @@ export default function App() {
             theme: "colored"
           }
         );
-        fetchData();
       }
+      fetchDataRef.current();
+    };
+
+    const handleIncomingRestock = async (data) => {
+      const currentUser = userRef.current;
+
+      if (currentUser && currentUser.role !== 'Customer') {
+        fetchDataRef.current();
+        return;
+      }
+
+      const targetProductId = data.productId;
+
+      const currentCart = JSON.parse(localStorage.getItem(getCartKey(currentUser)) || '[]');
+      const isInCart = currentCart.some(item => item._id === targetProductId || item.productId === targetProductId);
+      let isInWishlist = false;
+
+      if (currentUser) {
+        try {
+          const res = await fetch(`http://localhost:8000/api/wishlist/${currentUser._id}`);
+          const wishlistItems = await res.json();
+          isInWishlist = wishlistItems.some(item => item._id === targetProductId || item.productId === targetProductId);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      if (isInWishlist || isInCart) {
+        const locationText = isInCart ? "in your Cart" : "in your Wishlist";
+        toast.success(
+          <div style={{ padding: '5px' }}>
+            🔥 <strong>Back in Stock!</strong> <br />
+            The product <strong>{data.productName}</strong> {locationText} is now back in stock! <br />
+            Hurry up before it sells out again!
+          </div>,
+          {
+            position: "top-center",
+            autoClose: 15000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            theme: "colored"
+          }
+        );
+      }
+      fetchDataRef.current();
+    };
+
+    const handleStockUpdate = () => {
+      fetchDataRef.current();
+    };
+
+    const handleOrderStatusUpdate = () => {
+      fetchDataRef.current();
     };
 
     socket.on('productDiscount', handleIncomingDiscount);
     socket.on('product-discounted', handleIncomingDiscount);
     socket.on('flash_discount', handleIncomingDiscount);
-
-    const handleStockUpdate = () => {
-      fetchData();
-    };
+    socket.on('product-restocked', handleIncomingRestock);
     socket.on('stockUpdated', handleStockUpdate);
+    socket.on('orderStatusUpdated', handleOrderStatusUpdate);
 
     return () => {
       socket.off('productDiscount', handleIncomingDiscount);
       socket.off('product-discounted', handleIncomingDiscount);
       socket.off('flash_discount', handleIncomingDiscount);
+      socket.off('product-restocked', handleIncomingRestock);
       socket.off('stockUpdated', handleStockUpdate);
+      socket.off('orderStatusUpdated', handleOrderStatusUpdate);
     };
-  }, [cart, user, fetchData]);
+  }, []);
 
   const addToCart = (product) => {
     setCart(prevCart => {
@@ -225,7 +332,7 @@ export default function App() {
       } else {
         updated = [...prevCart, { ...product, qty: 1 }];
       }
-      localStorage.setItem(getCartKey(user), JSON.stringify(updated));
+      localStorage.setItem(getCartKey(userRef.current), JSON.stringify(updated));
       return updated;
     });
   };
@@ -337,15 +444,15 @@ export default function App() {
               </>
             )}
 
-            {user && user.role === 'Customer' &&(
+            {user && user.role === 'Customer' && (
               <li onClick={() => { setView('myOrders'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
-                 My Orders
+                  My Orders
               </li>
             )}
             
             {user && user.role === 'Customer' && (
               <li onClick={() => { setView('profile'); setIsMenuOpen(false); }} style={{ padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid #eee' }}>
-                 Profile Settings
+                  Profile Settings
               </li>
             )}
 

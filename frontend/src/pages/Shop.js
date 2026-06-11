@@ -32,6 +32,32 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
   const [onSaleOnly, setOnSaleOnly] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 50000 });
   const [wishlist, setWishlist] = useState([]);
+  const [dynamicCategories, setDynamicCategories] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'Product Manager' || user.role === 'product_manager') {
+        setView('product-manager-dashboard');
+      } else if (user.role === 'Sales Manager' || user.role === 'sales_manager') {
+        setView('sales-manager-dashboard');
+      }
+    }
+  }, [user, setView]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/categories');
+        if (res.ok) {
+          const data = await res.json();
+          setDynamicCategories(data.map(c => c.name));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchCategories();
+  }, [products]);
 
   useEffect(() => {
     const fetchWishlist = async () => {
@@ -64,7 +90,9 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
     );
   };
 
-  const derivedCategories = [...new Set(products.map(p => p.category))];
+  const derivedCategories = dynamicCategories.length > 0 
+    ? dynamicCategories 
+    : [...new Set(products.map(p => p.category))];
 
   const getCategoryCount = (cat) => {
     return products.filter(p => p.category === cat).length;
@@ -340,7 +368,6 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
                     )}
                   </div>
 
-                  {/*  */}
                   {product.stock === 0 ? (
                     <button
                       onClick={(e) => {

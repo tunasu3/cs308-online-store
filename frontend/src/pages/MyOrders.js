@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
+import { io } from 'socket.io-client';
 
-export default function MyOrders({ user, setView, products, setSelectedProduct }) {
+const socket = io('http://localhost:8000');
+
+export default function MyOrders({ user, setView, products, setSelectedProduct, orderUpdateSignal }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -8,8 +12,8 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  const fetchOrders = () => {
-    if (!user) {
+  const fetchOrders = useCallback(() => {
+    if (!user || !user._id) {
       setLoading(false);
       return;
     }
@@ -30,29 +34,51 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
         console.error(err);
         setLoading(false);
       });
-  };
+  }, [user, startDate, endDate]);
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    let url = `http://localhost:8000/api/orders/user/${user._id}`;
-    if (startDate && endDate) {
-      url += `?startDate=${startDate}&endDate=${endDate}`;
-    }
-    fetch(url)
-      .then(res => res.json())
-      .then(data => { setOrders(data); setLoading(false); })
-      .catch(err => { console.error(err); setLoading(false); });
-  }, [user, startDate, endDate]);
+    fetchOrders();
+  }, [fetchOrders, orderUpdateSignal]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    
+    const userNotificationEvent = `notification-${user._id}`;
+    const handleUserNotification = (data) => {
+      toast.info(data.message || 'Your order status has been updated!', {
+        position: "top-center",
+        autoClose: 4000
+      });
+      fetchOrders();
+    };
+
+    
+    const handleGlobalUpdate = (data) => {
+      
+      if (data && data.message) {
+        toast.info(data.message, { position: "top-center", autoClose: 4000 });
+      } else {
+        toast.info('Orders updated!', { position: "top-center", autoClose: 2000 });
+      }
+      fetchOrders();
+    };
+
+    socket.on(userNotificationEvent, handleUserNotification);
+    socket.on('orderStatusUpdated', handleGlobalUpdate);
+
+    return () => {
+      socket.off(userNotificationEvent, handleUserNotification);
+      socket.off('orderStatusUpdated', handleGlobalUpdate);
+    };
+  }, [user, fetchOrders]);
 
   const downloadInvoice = (orderId) => {
     window.open(`http://localhost:8000/api/orders/${orderId}/invoice`, '_blank');
   };
 
   const downloadAllInvoices = () => {
+    if (!user?._id) return;
     let url = `http://localhost:8000/api/orders/user/${user._id}/invoices/download`;
     if (startDate && endDate) {
       url += `?startDate=${startDate}&endDate=${endDate}`;
@@ -82,7 +108,7 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
         if (data.error) {
           alert(data.error);
         } else {
-          alert('Order cancelled successfully!');
+          toast.success('Order cancelled successfully!');
           fetchOrders(); 
         }
       })
@@ -111,7 +137,7 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
     })
       .then(res => res.json())
       .then(data => {
-        alert(data.message);
+        toast.success(data.message);
         fetchOrders();
       })
       .catch(err => {
@@ -169,7 +195,7 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
 
       <h1 style={{ marginBottom: '10px' }}>My Orders</h1>
 
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '25px', alignItems: 'center', backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
+      <div style={{ display: 'flex', gap: '15px', marginBottom: '25px', alignItems: 'center', backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px', flexWrap: 'wrap' }}>
         <label style={{ fontSize: '14px', color: '#4b5563' }}>
           From: <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ padding: '6px', borderRadius: '6px', border: '1px solid #d1d5db', marginLeft: '5px' }} />
         </label>
@@ -189,19 +215,19 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
           Download All Invoices (PDF)
         </button>
         <select
-  value={statusFilter}
-  onChange={e => setStatusFilter(e.target.value)}
-  style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px', cursor: 'pointer', backgroundColor: '#fff' }}
->
-  <option value="">All Statuses</option>
-  <option value="Processing">Processing</option>
-  <option value="In-Transit">In-Transit</option>
-  <option value="Delivered">Delivered</option>
-  <option value="Cancelled">Cancelled</option>
-  <option value="Refund Requested">Refund Requested</option>
-  <option value="Refunded">Refunded</option>
-  <option value="Refund Rejected">Refund Rejected</option>
-</select>
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px', cursor: 'pointer', backgroundColor: '#fff' }}
+        >
+          <option value="">All Statuses</option>
+          <option value="Processing">Processing</option>
+          <option value="In-Transit">In-Transit</option>
+          <option value="Delivered">Delivered</option>
+          <option value="Cancelled">Cancelled</option>
+          <option value="Refund Requested">Refund Requested</option>
+          <option value="Refunded">Refunded</option>
+          <option value="Refund Rejected">Refund Rejected</option>
+        </select>
 
         {(startDate || endDate) && (
           <button 
@@ -210,7 +236,6 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
           >
             Clear
           </button>
-          
         )}
       </div>
 
@@ -226,6 +251,9 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
         </div>
       ) : (
         orders.filter(order => !statusFilter || order.status === statusFilter || (!order.status && statusFilter === 'Processing')).map(order => {
+          
+          const orderGlobalStyle = getStatusColor(order.status || 'Processing');
+
           return (
             <div
               key={order._id}
@@ -237,7 +265,6 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                 boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
               }}
             >
-              {/* ÜST BAŞLIK ALANI - SAĞ ÜSTTEKİ GENEL STATÜ TAMAMEN KALDIRILDI */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px', borderBottom: '1px solid #eee', paddingBottom: '15px' }}>
                 <div>
                   <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>ORDER ID</div>
@@ -252,9 +279,21 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                     })}
                   </div>
                 </div>
+                <div style={{ textAlign: 'right' }}>
+                   <div style={{
+                      display: 'inline-block',
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      backgroundColor: orderGlobalStyle.bg,
+                      color: orderGlobalStyle.text
+                    }}>
+                      {order.status || 'Processing'}
+                   </div>
+                </div>
               </div>
 
-              {/* ÜRÜNLERİN LİSTELENDİĞİ ALAN - 3 SÜTUNLU FLEXBOX DÜZENİ */}
               <div style={{ marginBottom: '15px' }}>
                 {order.items && order.items.map((item, idx) => {
                   const itemStatusStyle = getStatusColor(item.itemStatus || 'Processing');
@@ -265,143 +304,68 @@ export default function MyOrders({ user, setView, products, setSelectedProduct }
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        padding: '12px 0',
-                        borderBottom: idx === order.items.length - 1 ? 'none' : '1px solid #f5f5f5'
+                        padding: '10px 0',
+                        borderBottom: idx !== order.items.length - 1 ? '1px solid #f3f4f6' : 'none'
                       }}
                     >
-                      {/* 1. Sütun: Sol Bölüm (Ürün İsmi ve Adet Detayları) */}
-                      <div style={{ flex: 1, textAlign: 'left' }}>
-                        <div
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <span 
+                          style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: '500' }}
                           onClick={() => handleProductClick(item.productId)}
-                          style={{
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            color: '#3b82f6',
-                            textDecoration: 'none',
-                            display: 'inline-block'
-                          }}
-                          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
                         >
                           {item.name}
-                        </div>
-                        <div style={{ marginTop: '4px', fontSize: '13px', color: '#888' }}>
-                          Qty: {item.quantity} × ${item.price}
-                        </div>
+                        </span>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>x{item.quantity}</span>
                       </div>
-
-                      {/* 2. Sütun: Orta Bölüm (Ürün Statüsü - Tam Ortada Durur) */}
-                      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <span style={{ fontWeight: '600' }}>{(item.price * item.quantity).toLocaleString()} TL</span>
                         <span style={{
-                          padding: '4px 12px',
-                          borderRadius: '6px',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '11px',
+                          fontWeight: '600',
                           backgroundColor: itemStatusStyle.bg,
-                          color: itemStatusStyle.text,
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          textAlign: 'center',
-                          whiteSpace: 'nowrap'
+                          color: itemStatusStyle.text
                         }}>
                           {item.itemStatus || 'Processing'}
                         </span>
-                      </div>
-
-                      {/* 3. Sütun: Sağ Bölüm (Fiyat) */}
-                      <div style={{ flex: 1, textAlign: 'right', fontWeight: 'bold' }}>
-                        ${item.price * item.quantity}
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '15px', borderTop: '1px solid #eee' }}>
-                <div>
-                  <div style={{ fontSize: '12px', color: '#888' }}>TOTAL</div>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#10b981' }}>
-                    ${order.totalPrice?.toLocaleString()} 
-                  </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #eee' }}>
+                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                  Total: {order.totalPrice ? order.totalPrice.toLocaleString() : 0} TL
                 </div>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-  
-  {}
-  {(order.status === 'Processing' || !order.status) && (
-    <button
-      onClick={() => handleCancelOrder(order._id)}
-      style={{
-        padding: '10px 20px', backgroundColor: '#ef4444', color: '#fff',
-        border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600',
-      }}
-    >
-      ❌ Cancel Order
-    </button>
-  )}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={() => downloadInvoice(order._id)}
+                    style={{ padding: '8px 16px', backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
+                  >
+                    Download Invoice
+                  </button>
+                  
+                  {order.status === 'Processing' && (
+                    <button
+                      onClick={() => handleCancelOrder(order._id)}
+                      style={{ padding: '8px 16px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
+                    >
+                      Cancel Order
+                    </button>
+                  )}
 
-  {}
-  {order.status === 'Delivered' && (
-    <button
-      onClick={() => handleRefundRequest(order)}
-      disabled={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30}
-      title={(Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '30-day refund window has expired' : 'Request a refund'}
-      style={{
-        padding: '10px 20px',
-        backgroundColor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#e5e7eb' : '#ef4444',
-        color: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? '#9ca3af' : '#fff',
-        border: 'none', borderRadius: '6px',
-        cursor: (Date.now() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24) > 30 ? 'not-allowed' : 'pointer',
-        fontWeight: '600',
-      }}
-    >
-      Request Refund
-    </button>
-  )}        
-
-  {}
-  {order.status === 'Refund Requested' && (
-    <span style={{ padding: '10px 16px', backgroundColor: '#fef3c7', color: '#92400e', borderRadius: '6px', fontWeight: '600', fontSize: '14px', border: '1px solid #fde68a' }}>
-      ⏳ Under Consideration
-    </span>
-  )}
-
-  {}
-  {order.status === 'Refunded' && (
-    <span style={{ padding: '10px 16px', backgroundColor: '#d1fae5', color: '#065f46', borderRadius: '6px', fontWeight: '600', fontSize: '14px', border: '1px solid #a7f3d0' }}>
-      ✅ Refunded
-    </span>
-  )}
-
-  {}
-  {order.status === 'Refund Rejected' && (
-    <span style={{ padding: '10px 16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', fontWeight: '600', fontSize: '14px', border: '1px solid #fecaca' }}>
-      ❌ Refund Rejected
-    </span>
-  )}
-
-  {}
-  {order.status === 'Cancelled' && (
-    <span style={{ padding: '10px 16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', fontWeight: '600', fontSize: '14px', border: '1px solid #fecaca' }}>
-      🚫 Cancelled
-    </span>
-  )}
-
-  {}
-  <button
-    onClick={() => downloadInvoice(order._id)}
-    style={{
-      padding: '10px 20px', backgroundColor: '#3b82f6', color: '#fff',
-      border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600'
-    }}
-  >
-    📄 Download Invoice
-  </button>
-</div>
+                  {order.status === 'Delivered' && (
+                    <button
+                      onClick={() => handleRefundRequest(order)}
+                      style={{ padding: '8px 16px', backgroundColor: '#f59e0b', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
+                    >
+                      Request Refund
+                    </button>
+                  )}
+                </div>
               </div>
-
-              {order.deliveryAddress && (
-                <div style={{ marginTop: '12px', fontSize: '13px', color: '#666' }}>
-                  <strong>Deliver to:</strong> {order.deliveryAddress}
-                </div>
-              )}
             </div>
           );
         })
