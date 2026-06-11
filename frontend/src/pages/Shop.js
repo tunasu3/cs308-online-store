@@ -46,18 +46,22 @@ export default function Shop({ products, searchTerm, addToCart, setView, setSele
 
   useEffect(() => {
     const fetchCategories = async () => {
-      try {
-        const res = await fetch('http://localhost:8000/api/categories');
-        if (res.ok) {
-          const data = await res.json();
-          setDynamicCategories(data.map(c => c.name));
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchCategories();
-  }, [products]);
+  try {
+    const res = await fetch('http://localhost:8000/api/categories');
+    if (res.ok) {
+      const data = await res.json();
+      setDynamicCategories(data.map(c => c.name));
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+fetchCategories();
+
+const socket = require('socket.io-client').io('http://localhost:8000');
+socket.on('categoryUpdated', fetchCategories);
+return () => socket.disconnect();
+}, [products]);
 
   useEffect(() => {
     const fetchWishlist = async () => {

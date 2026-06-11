@@ -319,7 +319,8 @@ export default function ProductManager({ products, categories = [], fetchData, d
                 <tr style={{ borderBottom: '2px solid #edf2f7', color: '#64748b' }}>
                   <th style={{ padding: '15px' }}>Delivery ID</th>
                   <th style={{ padding: '15px' }}>Customer Details</th>
-                  <th style={{ padding: '15px' }}>Products & Item Delivery Status</th>
+<th style={{ padding: '15px' }}>Customer ID</th>
+<th style={{ padding: '15px' }}>Products & Item Delivery Status</th>
                   <th style={{ padding: '15px' }}>Total Price</th>
                   <th style={{ padding: '15px' }}>Address</th>
                   <th style={{ padding: '15px', textAlign: 'right' }}>Invoice</th>
@@ -330,9 +331,12 @@ export default function ProductManager({ products, categories = [], fetchData, d
                   <tr key={order._id} style={{ borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' }}>
                     <td style={{ padding: '15px', fontFamily: 'monospace', fontSize: '12px', color: '#64748b', paddingTop: '20px' }}>#{order._id.substring(0,8)}...</td>
                     <td style={{ padding: '15px', paddingTop: '20px' }}>
-                      <div style={{ fontWeight: '600', color: '#0f172a' }}>{order.userName || 'Guest'}</div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>{order.userEmail}</div>
-                    </td>
+  <div style={{ fontWeight: '600', color: '#0f172a' }}>{order.userName || 'Guest'}</div>
+  <div style={{ fontSize: '12px', color: '#64748b' }}>{order.userEmail}</div>
+</td>
+<td style={{ padding: '15px', paddingTop: '20px', fontSize: '11px', color: '#64748b', fontFamily: 'monospace', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+  {order.user ? order.user.toString().substring(0, 10) + '...' : 'N/A'}
+</td>
                     <td style={{ padding: '15px', minWidth: '320px' }}>
                       {order.items && order.items.map((item, idx) => {
                         const isTerminalStatus = ['Cancelled', 'Refund Requested', 'Refunded', 'Refund Rejected'].includes(item.itemStatus);
@@ -340,8 +344,9 @@ export default function ProductManager({ products, categories = [], fetchData, d
                         return (
                           <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px dashed #f1f5f9', gap: '15px' }}>
                             <span style={{ fontSize: '13px', fontWeight: '500', color: '#334155' }}>
-                              {item.name} x<strong style={{ color: '#2563eb' }}>{item.quantity}</strong>
-                            </span>
+  {item.name} x<strong style={{ color: '#2563eb' }}>{item.quantity}</strong>
+  <div style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>ID: {item.productId ? item.productId.toString().substring(0, 10) + '...' : 'N/A'}</div>
+</span>
                             
                             {isTerminalStatus ? (
                               <span style={{
