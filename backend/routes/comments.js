@@ -25,6 +25,9 @@ router.post('/', async (req, res) => {
         const newComment = new Comment({ productId, userId, userName, rating, comment });
         await newComment.save();
 
+        const io = req.app.get('io');
+if (io) io.emit('newComment', { commentId: newComment._id });
+
         // ✅ Recalculate product rating immediately using ALL ratings (approved or not)
         const allComments = await Comment.find({ productId });
         const totalRating = allComments.reduce((sum, c) => sum + c.rating, 0);

@@ -31,6 +31,9 @@ router.post('/', async (req, res) => {
         const order = new Order({ user: userId, userName, userEmail, items, totalPrice, deliveryAddress });
         const savedOrder = await order.save();
 
+        const io = req.app.get('io');
+if (io) io.emit('newOrder', { orderId: savedOrder._id });
+
         const itemsHtml = items.map(item => `
             <tr>
                 <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.name}</td>
