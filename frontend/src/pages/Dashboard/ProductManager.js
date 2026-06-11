@@ -334,8 +334,8 @@ export default function ProductManager({ products, categories = [], fetchData, d
   <div style={{ fontWeight: '600', color: '#0f172a' }}>{order.userName || 'Guest'}</div>
   <div style={{ fontSize: '12px', color: '#64748b' }}>{order.userEmail}</div>
 </td>
-<td style={{ padding: '15px', paddingTop: '20px', fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>
-  {order.user || 'N/A'}
+<td style={{ padding: '15px', paddingTop: '20px', fontSize: '11px', color: '#64748b', fontFamily: 'monospace', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+  {order.user ? order.user.toString().substring(0, 10) + '...' : 'N/A'}
 </td>
                     <td style={{ padding: '15px', minWidth: '320px' }}>
                       {order.items && order.items.map((item, idx) => {
@@ -345,7 +345,7 @@ export default function ProductManager({ products, categories = [], fetchData, d
                           <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px dashed #f1f5f9', gap: '15px' }}>
                             <span style={{ fontSize: '13px', fontWeight: '500', color: '#334155' }}>
   {item.name} x<strong style={{ color: '#2563eb' }}>{item.quantity}</strong>
-  <div style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>ID: {item.productId}</div>
+  <div style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>ID: {item.productId ? item.productId.toString().substring(0, 10) + '...' : 'N/A'}</div>
 </span>
                             
                             {isTerminalStatus ? (
