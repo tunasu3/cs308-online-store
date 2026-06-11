@@ -31,17 +31,9 @@ export default function ProductManager({ products, categories = [], fetchData, d
   };
 
   useEffect(() => {
-  fetchOrders();
-  fetchPendingReviews();
-
-  const socket = require('socket.io-client').io('http://localhost:8000');
-  socket.on('orderStatusUpdated', () => fetchOrders());
-socket.on('newOrder', () => fetchOrders());
-socket.on('newComment', () => fetchPendingReviews());
-socket.on('commentAdded', () => fetchPendingReviews());
-
-  return () => socket.disconnect();
-}, []);
+    fetchOrders();
+    fetchPendingReviews();
+  }, []);
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
