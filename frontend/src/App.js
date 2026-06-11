@@ -61,14 +61,7 @@ export default function App() {
 
   useEffect(() => {
     userRef.current = user;
-    if (user) {
-      if (user.role === 'ProductManager' && view === 'shop') {
-        setView('products');
-      } else if (user.role === 'SalesManager' && view === 'shop') {
-        setView('salesManager');
-      }
-    }
-  }, [user, view]);
+  }, [user]);
 
   const switchAccount = (accountId) => {
     if (!accountId) {

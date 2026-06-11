@@ -70,11 +70,7 @@ export default function ProductDetail({ product, addToCart, setView, user, fetch
       alert('Please select a star rating (1-5 stars).');
       return;
     }
-    if (review.trim() === '') {
-      alert('Please write a review before submitting.');
-      return;
-    }
-
+  
     try {
       const res = await fetch('http://localhost:8000/api/comments', {
         method: 'POST',
