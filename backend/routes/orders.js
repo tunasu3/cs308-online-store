@@ -5,7 +5,6 @@ const Product = require('../models/Product');
 const PDFDocument = require('pdfkit');
 const nodemailer = require('nodemailer'); 
 
-
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -13,7 +12,6 @@ const transporter = nodemailer.createTransport({
         pass: process.env.MAIL_PASS  
     }
 });
-
 
 router.post('/', async (req, res) => {
     const { userId, userName, userEmail, items, totalPrice, deliveryAddress } = req.body;
@@ -77,12 +75,14 @@ router.post('/', async (req, res) => {
             else console.log('Invoice email sent:', info.response);
         });
 
+        const io = req.app.get('io') || global.io;
+        if (io) io.emit('stockUpdated', { reason: 'purchase' });
+
         res.status(201).json({ message: 'Order placed!', id: savedOrder.id });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
-
 
 router.put('/:id/refund-evaluate', async (req, res) => {
     try {
@@ -93,7 +93,6 @@ router.put('/:id/refund-evaluate', async (req, res) => {
 
         if (action === 'approve') {
             order.status = 'Refunded';
-            
             
             const refundMailOptions = {
                 from: `"CS308 Gaming Store" <${process.env.MAIL_USER}>`,
@@ -123,7 +122,6 @@ router.put('/:id/refund-evaluate', async (req, res) => {
                         const oldStock = product.stock;
                         product.stock += item.quantity;
                         
-                        
                         if (oldStock === 0 && product.stock > 0 && product.waitingList && product.waitingList.length > 0) {
                             const targetEmails = product.waitingList.filter(email => email && email.trim() !== '');
                             
@@ -148,17 +146,26 @@ router.put('/:id/refund-evaluate', async (req, res) => {
                     }
                 }
             }
-            const io = req.app.get('io');
-            if (io) io.emit('stockUpdated', { reason: 'refund', orderId: order._id });
         } else if (action === 'reject') {
             order.status = 'Refund Rejected';
-            
-            
         } else {
             return res.status(400).json({ error: 'Invalid action.' });
         }
 
         await order.save();
+
+        const io = req.app.get('io') || global.io;
+        if (io) {
+            const displayId = order._id.toString().substring(0, 6).toUpperCase();
+            io.emit('stockUpdated', { reason: 'refund', orderId: order._id });
+            io.emit('orderStatusUpdated', { orderId: order._id, globalStatus: order.status, message: `Order status updated to ${order.status}!` });
+            if (order.user) {
+                io.emit(`notification-${order.user}`, { 
+                    message: `Your refund request has been ${action === 'approve' ? 'approved' : 'rejected'}. (Order ID: #${displayId})` 
+                });
+            }
+        }
+
         res.json({ message: `Refund successfully ${action}d!`, order });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -170,7 +177,6 @@ router.get('/invoices/bulk', async (req, res) => {
         const { startDate, endDate } = req.query;
         let query = {};
 
-       
         if (startDate && endDate && startDate !== '' && endDate !== '' && startDate !== 'undefined') {
             query.createdAt = {
                 $gte: new Date(new Date(startDate).setHours(0, 0, 0, 0)),
@@ -178,17 +184,14 @@ router.get('/invoices/bulk', async (req, res) => {
             };
         }
 
-        
         const orders = await Order.find(query).sort({ createdAt: -1 });
 
         if (!orders || orders.length === 0) {
             return res.status(404).send('No orders found in this date range to download.');
         }
 
-       
         const doc = new PDFDocument({ margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
-        
         
         const fileName = startDate && endDate 
             ? `bulk-invoices-${startDate}-to-${endDate}.pdf` 
@@ -197,7 +200,6 @@ router.get('/invoices/bulk', async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
         doc.pipe(res);
 
-        
         orders.forEach((order, index) => {
             if (index > 0) doc.addPage();
 
@@ -240,6 +242,7 @@ router.get('/invoices/bulk', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
 router.get('/', async (req, res) => {
     try {
         const orders = await Order.find().sort({ createdAt: -1 });
@@ -248,7 +251,6 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
 
 router.get('/user/:userId', async (req, res) => {
     try {
@@ -268,7 +270,6 @@ router.get('/user/:userId', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
 
 router.get('/user/:userId/invoices/download', async (req, res) => {
     try {
@@ -335,17 +336,38 @@ router.get('/user/:userId/invoices/download', async (req, res) => {
     }
 });
 
-
 router.put('/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
-        const order = await Order.findByIdAndUpdate(req.params.id, { status }, { returnDocument: 'after' }); // <-- { new: true } yerine returnDocument yazdık
+        
+        const order = await Order.findById(req.params.id);
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        
+        if (order.status === 'Cancelled' || order.status === 'Refunded' || order.status === 'Refund Rejected') {
+            return res.status(400).json({ error: `Cannot modify status. This order is already ${order.status.toLowerCase()}.` });
+        }
+        
+        order.status = status;
+        await order.save();
+        
+        const io = req.app.get('io') || global.io;
+        if (io) {
+            const displayId = order._id.toString().substring(0, 6).toUpperCase();
+            const textMessage = `The status of your order (ID: #${displayId}) has been updated to "${status}".`;
+            
+            io.emit('orderStatusUpdated', { orderId: req.params.id, globalStatus: status, message: textMessage });
+            if (order.user) {
+                io.emit(`notification-${order.user}`, { 
+                    message: textMessage 
+                });
+            }
+        }
+
         res.json(order);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
-
 
 router.get('/sales/refund-requests', async (req, res) => {
     try {
@@ -360,7 +382,6 @@ router.get('/sales/refund-requests', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
 
 router.get('/:id/invoice', async (req, res) => {
     try {
@@ -411,7 +432,6 @@ router.get('/:id/invoice', async (req, res) => {
     }
 });
 
-
 router.post('/:id/refund-request', async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -431,11 +451,17 @@ router.post('/:id/refund-request', async (req, res) => {
     order.refundRequestedAt = new Date();
     await order.save();
 
+    const io = req.app.get('io') || global.io;
+    if (io) {
+        io.emit('orderStatusUpdated', { orderId: order._id, globalStatus: order.status, message: 'A new refund request has been created.' });
+    }
+
     res.json({ message: 'Refund request submitted successfully', order });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 router.put('/:id/cancel', async (req, res) => {
     try {
         const order = await Order.findById(req.params.id);
@@ -443,16 +469,13 @@ router.put('/:id/cancel', async (req, res) => {
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        
         if (order.status !== 'Processing') {
             return res.status(400).json({ error: 'Only orders in "Processing" status can be cancelled.' });
         }
 
-        
         order.status = 'Cancelled';
         await order.save();
 
-        
         for (let item of order.items) {
             if (item.productId) {
                 const product = await Product.findById(item.productId);
@@ -462,14 +485,18 @@ router.put('/:id/cancel', async (req, res) => {
                 }
             }
         }
-        const io = req.app.get('io');
-        if (io) io.emit('stockUpdated', { reason: 'cancel', orderId: order._id });
+        const io = req.app.get('io') || global.io;
+        if (io) {
+            io.emit('stockUpdated', { reason: 'cancel', orderId: order._id });
+            io.emit('orderStatusUpdated', { orderId: order._id, globalStatus: order.status, message: 'Order has been cancelled.' });
+        }
 
         res.json({ message: 'Order cancelled successfully and stocks reverted.', order });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 router.patch('/:orderId/items/:itemId', async (req, res) => {
     try {
         const { orderId, itemId } = req.params;
@@ -478,6 +505,10 @@ router.patch('/:orderId/items/:itemId', async (req, res) => {
         const order = await Order.findById(orderId);
         if (!order) {
             return res.status(404).json({ error: 'Order not found' });
+        }
+
+        if (order.status === 'Cancelled' || order.status === 'Refunded' || order.status === 'Refund Rejected') {
+            return res.status(400).json({ error: `Cannot update items. This order is already ${order.status.toLowerCase()}.` });
         }
 
         const item = order.items.id(itemId);
@@ -501,9 +532,23 @@ router.patch('/:orderId/items/:itemId', async (req, res) => {
         }
 
         await order.save();
+
+        const io = req.app.get('io') || global.io;
+        if (io) {
+            const textMessage = `The delivery status of "${item.name}" in your order has been updated to "${itemStatus}".`;
+            
+            io.emit('orderStatusUpdated', { orderId: order._id, globalStatus: order.status, message: textMessage });
+            if (order.user) {
+                io.emit(`notification-${order.user}`, { 
+                    message: textMessage 
+                });
+            }
+        }
+
         res.json({ message: 'Item and global status updated successfully', order });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 module.exports = router;

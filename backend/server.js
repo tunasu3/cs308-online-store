@@ -30,6 +30,7 @@ const io = new Server(server, {
 });
 
 app.set('io', io);
+global.io = io;
 
 io.on('connection', (socket) => {
     socket.on('disconnect', () => {});
@@ -82,12 +83,37 @@ app.get('/api/admin/orders', async (req, res) => {
 
 app.put('/api/orders/:id', async (req, res) => {
     try {
-        const updatedOrder = await Order.findByIdAndUpdate(
-            req.params.id, 
-            { status: req.body.status },
-            { new: true }
-        );
-        res.json(updatedOrder);
+        const { status } = req.body;
+        
+        const order = await Order.findById(req.params.id);
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        
+        if (order.status === 'Cancelled' || order.status === 'Refunded' || order.status === 'Refund Rejected') {
+            return res.status(400).json({ error: `Cannot modify status. This order is already ${order.status.toLowerCase()}.` });
+        }
+        
+        order.status = status;
+        await order.save();
+        
+        const socketIo = req.app.get('io') || global.io;
+        if (socketIo) {
+            const displayId = order._id.toString().substring(0, 6).toUpperCase();
+            const textMessage = `The status of your order (ID: #${displayId}) has been updated to "${status}".`;
+
+            socketIo.emit('orderStatusUpdated', { 
+                orderId: order._id, 
+                globalStatus: status, 
+                message: textMessage 
+            });
+            
+            if (order.user) {
+                socketIo.emit(`notification-${order.user.toString()}`, {
+                    message: textMessage
+                });
+            }
+        }
+
+        res.json(order);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -96,15 +122,26 @@ app.put('/api/orders/:id', async (req, res) => {
 app.put('/api/admin/update-product/:id', async (req, res) => {
     try {
         const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const socketIo = req.app.get('io') || global.io;
         
-        if (req.body.price || req.body.discountRate) {
-            const socketIo = req.app.get('io');
-            socketIo.emit('product-discounted', {
-                productId: updatedProduct._id,
-                productName: updatedProduct.name,
-                discountRate: updatedProduct.discountRate || 0,
-                newPrice: updatedProduct.price
-            });
+        if (socketIo) {
+            socketIo.emit('productUpdated');
+
+            if (req.body.price || req.body.discountRate) {
+                socketIo.emit('product-discounted', {
+                    productId: updatedProduct._id,
+                    productName: updatedProduct.name,
+                    discountRate: updatedProduct.discountRate || 0,
+                    newPrice: updatedProduct.price
+                });
+            }
+            
+            if (req.body.stockCount !== undefined && req.body.stockCount > 0) {
+                socketIo.emit('product-restocked', {
+                    productId: updatedProduct._id,
+                    productName: updatedProduct.name
+                });
+            }
         }
         
         res.json({ message: "Updated" });
@@ -149,7 +186,7 @@ app.post('/api/orders/mail-invoice/:id', async (req, res) => {
         doc.moveDown();
         doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
         doc.moveDown();
-        doc.fontSize(16).text(`TOTAL: ${order.totalPrice.toLocaleString()} TL`, { align: 'right' });
+        doc.fontSize(16).text(`TOTAL: ${order.totalPrice.toLocaleString()} $`, { align: 'right' });
         doc.moveDown(2);
         doc.fontSize(10).fillColor('#999').text('Thank you for shopping with CS308 Gaming Store!', { align: 'center' });
 

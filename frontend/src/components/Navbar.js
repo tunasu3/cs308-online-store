@@ -5,16 +5,16 @@ const socket = io('http://localhost:8000');
 
 export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOpen, setIsMenuOpen, wishlistCount, accounts, switchAccount }) {
   const totalItems = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
-  const isCustomer = !user || user.role === 'Customer';
+  const isCustomer = !user || user.role === 'Customer' || user.role === 'customer';
   const [hasWishlistNotification, setHasWishlistNotification] = React.useState(false);
 
   React.useEffect(() => {
-    if (user && user.role !== 'Customer') {
+    if (user && user.role !== 'Customer' && user.role !== 'customer') {
       if (typeof setView === 'function') {
-        if (user.role === 'Product Manager' || user.role === 'product_manager') {
-          setView('product-manager-dashboard');
-        } else if (user.role === 'Sales Manager' || user.role === 'sales_manager') {
-          setView('sales-manager-dashboard');
+        if (user.role === 'Product Manager' || user.role === 'product_manager' || user.role === 'ProductManager') {
+          setView('products');
+        } else if (user.role === 'Sales Manager' || user.role === 'sales_manager' || user.role === 'SalesManager') {
+          setView('salesManager');
         }
       }
     }
@@ -57,13 +57,30 @@ export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOp
   };
 
   const handleLogoClick = () => {
-    if (user && (user.role === 'Product Manager' || user.role === 'product_manager')) {
-      setView('product-manager-dashboard');
-    } else if (user.role === 'Sales Manager' || user.role === 'sales_manager') {
-      setView('sales-manager-dashboard');
+    if (user && (user.role === 'Product Manager' || user.role === 'product_manager' || user.role === 'ProductManager')) {
+      setView('products');
+    } else if (user.role === 'Sales Manager' || user.role === 'sales_manager' || user.role === 'SalesManager') {
+      setView('salesManager');
     } else {
       setView('shop');
     }
+  };
+
+  const renderAccountOptions = () => {
+    let accountsList = [];
+    if (Array.isArray(accounts)) {
+      accountsList = accounts;
+    } else if (accounts && Array.isArray(accounts.users)) {
+      accountsList = accounts.users;
+    } else if (accounts && Array.isArray(accounts.data)) {
+      accountsList = accounts.data;
+    }
+
+    return accountsList.map((acc) => (
+      <option key={acc._id} value={acc._id}>
+        {acc.name || acc.email || 'User'} ({acc.role})
+      </option>
+    ));
   };
 
   return (
@@ -103,10 +120,10 @@ export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOp
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <div onClick={() => {
               if (user) {
-                if (user.role === 'Product Manager' || user.role === 'product_manager') {
-                  setView('product-manager-dashboard');
-                } else if (user.role === 'Sales Manager' || user.role === 'sales_manager') {
-                  setView('sales-manager-dashboard');
+                if (user.role === 'Product Manager' || user.role === 'product_manager' || user.role === 'ProductManager') {
+                  setView('products');
+                } else if (user.role === 'Sales Manager' || user.role === 'sales_manager' || user.role === 'SalesManager') {
+                  setView('salesManager');
                 } else {
                   setView('shop');
                 }
@@ -124,9 +141,7 @@ export default function Navbar({ setView, cart, user, setSearchTerm, setIsCartOp
               style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', outline: 'none', fontSize: '13px', cursor: 'pointer', color: '#374151', fontWeight: '500' }}
             >
               <option value="">Guest (Logout)</option>
-              {accounts && accounts.map((acc) => (
-                <option key={acc._id} value={acc._id}>{acc.name} ({acc.role})</option>
-              ))}
+              {renderAccountOptions()}
             </select>
           </div>
 

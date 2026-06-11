@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema({
     homeAddress: { type: String, default: '' },
     role: { type: String, enum: ['Customer', 'SalesManager', 'ProductManager'], default: 'Customer' },
 
-    // ✅ ADD IT HERE (inside)
+   
     wishlist: [
       {
         type: mongoose.Schema.Types.ObjectId,

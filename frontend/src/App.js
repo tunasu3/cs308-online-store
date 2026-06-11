@@ -62,9 +62,9 @@ export default function App() {
   useEffect(() => {
     userRef.current = user;
     if (user) {
-      if (user.role === 'ProductManager' && view === 'shop') {
+      if (user.role === 'ProductManager' && (view === 'shop' || view === 'productDetail' || view === 'cart' || view === 'wishlist')) {
         setView('products');
-      } else if (user.role === 'SalesManager' && view === 'shop') {
+      } else if (user.role === 'SalesManager' && (view === 'shop' || view === 'productDetail' || view === 'cart' || view === 'wishlist')) {
         setView('salesManager');
       }
     }
